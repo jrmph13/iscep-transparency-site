@@ -1,0 +1,17 @@
+rules_version = '2';
+
+// Images are now stored as base64 strings directly in Firestore documents
+// (see firestore.rules — `photoBase64`, `imageBase64`). This file is kept
+// empty so an accidental `firebase deploy --only storage` won't enable a
+// paid Cloud Storage bucket. See `imageToBase64.ts` for the client-side
+// compressor and `adminWrites.ts` for the upload helpers.
+//
+// Deploy: do not deploy storage. Images live in Firestore only.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,76 @@
+name: Build & deploy transparency site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Re-pull the spreadsheet and redeploy every 30 minutes.
+    - cron: '*/30 * * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Pull fresh data: Google Sheet + (if a token is set) Facebook posts.
+      # SHEET_ID is a secret — the sheet holds student PII. Without it the sync
+      # is skipped and the JSON already committed under public/data/ is used.
+      - run: npm run sync
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          SHEET_RECORDS_GID: ${{ vars.SHEET_RECORDS_GID }}
+          SHEET_FUNDS_GID: ${{ vars.SHEET_FUNDS_GID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          FB_PAGE_ID: ${{ vars.FB_PAGE_ID }}
+          FB_SCRAPE: ${{ vars.FB_SCRAPE }}
+
+      # Firebase web config is public (not a secret) — repo Variables are fine.
+      # Leave them unset to ship without the Members roster.
+      - run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
+          # Read key for the Apps Script API (not a real secret; repo Variable).
+          VITE_APPS_SCRIPT_KEY: ${{ vars.VITE_APPS_SCRIPT_KEY }}
+          # Opt-in only — see .env.example. Leave the Variables unset to keep
+          # the spreadsheet id out of the published bundle.
+          VITE_LOOKUP_SHEET_ID: ${{ vars.VITE_LOOKUP_SHEET_ID }}
+          VITE_LOOKUP_SHEET_GID: ${{ vars.VITE_LOOKUP_SHEET_GID }}
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

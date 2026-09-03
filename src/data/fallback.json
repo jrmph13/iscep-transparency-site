@@ -1,0 +1,203 @@
+{
+  "fetchedAt": "2026-09-03T16:35:22.989Z",
+  "recordCount": 672,
+  "summary": {
+    "totalCollected": 11450,
+    "remainingFunds": 11450,
+    "spent": 0,
+    "perMemberFee": 50,
+    "expectedMembership": 33600,
+    "collectionRate": 0.34077380952380953,
+    "totalMembers": 672,
+    "contributors": 229,
+    "pending": 443,
+    "feeCounts": {
+      "ssg": 0,
+      "membership": 232,
+      "orgShirt": 0,
+      "event": 0,
+      "others": 0
+    },
+    "bySection": [
+      {
+        "section": "3A",
+        "members": 76,
+        "contributors": 60,
+        "collected": 3000,
+        "expected": 3800,
+        "rate": 0.7894736842105263
+      },
+      {
+        "section": "2A",
+        "members": 82,
+        "contributors": 46,
+        "collected": 2300,
+        "expected": 4100,
+        "rate": 0.5609756097560976
+      },
+      {
+        "section": "1A",
+        "members": 76,
+        "contributors": 34,
+        "collected": 1700,
+        "expected": 3800,
+        "rate": 0.4473684210526316
+      },
+      {
+        "section": "3B",
+        "members": 63,
+        "contributors": 28,
+        "collected": 1400,
+        "expected": 3150,
+        "rate": 0.4444444444444444
+      },
+      {
+        "section": "1B",
+        "members": 69,
+        "contributors": 21,
+        "collected": 1050,
+        "expected": 3450,
+        "rate": 0.30434782608695654
+      },
+      {
+        "section": "2B",
+        "members": 46,
+        "contributors": 19,
+        "collected": 950,
+        "expected": 2300,
+        "rate": 0.41304347826086957
+      },
+      {
+        "section": "3C",
+        "members": 65,
+        "contributors": 13,
+        "collected": 650,
+        "expected": 3250,
+        "rate": 0.2
+      },
+      {
+        "section": "4A",
+        "members": 75,
+        "contributors": 7,
+        "collected": 350,
+        "expected": 3750,
+        "rate": 0.09333333333333334
+      },
+      {
+        "section": "3SPC",
+        "members": 31,
+        "contributors": 1,
+        "collected": 50,
+        "expected": 1550,
+        "rate": 0.03225806451612903
+      },
+      {
+        "section": "4B",
+        "members": 65,
+        "contributors": 0,
+        "collected": 0,
+        "expected": 3250,
+        "rate": 0
+      },
+      {
+        "section": "2SPC",
+        "members": 11,
+        "contributors": 0,
+        "collected": 0,
+        "expected": 550,
+        "rate": 0
+      },
+      {
+        "section": "4SPC",
+        "members": 7,
+        "contributors": 0,
+        "collected": 0,
+        "expected": 350,
+        "rate": 0
+      },
+      {
+        "section": "1SPC",
+        "members": 6,
+        "contributors": 0,
+        "collected": 0,
+        "expected": 300,
+        "rate": 0
+      }
+    ],
+    "statusCounts": [
+      {
+        "label": "No amount yet",
+        "count": 443
+      },
+      {
+        "label": "Partially Paid",
+        "count": 222
+      },
+      {
+        "label": "Recorded",
+        "count": 6
+      },
+      {
+        "label": "Partial Paid",
+        "count": 1
+      }
+    ],
+    "byCashier": [
+      {
+        "cashier": "AuditorTalento",
+        "count": 212,
+        "collected": 10600
+      },
+      {
+        "cashier": "Unspecified",
+        "count": 17,
+        "collected": 850
+      }
+    ],
+    "recent": [
+      {
+        "section": "4A",
+        "amount": 50,
+        "date": "2026-08-20"
+      },
+      {
+        "section": "4A",
+        "amount": 50,
+        "date": "2026-08-20"
+      },
+      {
+        "section": "4A",
+        "amount": 50,
+        "date": "2026-08-20"
+      },
+      {
+        "section": "4A",
+        "amount": 50,
+        "date": "2026-08-20"
+      },
+      {
+        "section": "4A",
+        "amount": 50,
+        "date": "2026-08-20"
+      },
+      {
+        "section": "4A",
+        "amount": 50,
+        "date": "2026-08-20"
+      },
+      {
+        "section": "4A",
+        "amount": 50,
+        "date": "2026-08-20"
+      },
+      {
+        "section": "3B",
+        "amount": 50,
+        "date": "2026-08-20"
+      }
+    ]
+  },
+  "funds": {
+    "remainingFunds": 11450
+  }
+}

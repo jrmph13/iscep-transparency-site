@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting…</title>
+    <script>
+      // GitHub Pages serves this for unknown paths. Convert a shared/typed
+      // path like /payments/studentid/2026-12345 into the app's hash route
+      // so it loads correctly from any deploy sub-path.
+      (function () {
+        var p = location.pathname
+        var i = p.indexOf('/payments/')
+        var a = p.indexOf('/iscep/org/admin/')
+        if (i !== -1) {
+          location.replace(p.slice(0, i) + '/#' + p.slice(i) + location.search)
+        } else if (a !== -1) {
+          location.replace(p.slice(0, a) + '/#' + p.slice(a))
+        } else {
+          location.replace(p.replace(/\/[^\/]*$/, '/'))
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    Redirecting…
+  </body>
+</html>

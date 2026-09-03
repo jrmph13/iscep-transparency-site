@@ -1,0 +1,166 @@
+rules_version = '2';
+
+// ISCEP transparency — Firestore security rules.
+//
+// Model: the public site READS a small, non-sensitive `members` roster (and an
+// optional realtime `summary` mirror). WRITES are admin-only and validated.
+//
+// Access control: a hard-coded SUPER OWNER e-mail always has admin rights and is
+// the only account that can edit the whitelist (`admins/{email}` docs). Other
+// admins are added by the owner and can manage members / summary but not the
+// whitelist. The owner row can never be created or deleted by a client.
+//
+// Deploy:  firebase deploy --only firestore:rules
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function ownerEmail() {
+      return 'jhamesediting@gmail.com';
+    }
+
+    function authEmail() {
+      return request.auth != null ? request.auth.token.email : '';
+    }
+
+    function isVerified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner() {
+      return isVerified() && authEmail() == ownerEmail();
+    }
+
+    function isAdmin() {
+      return isOwner()
+        || (isVerified()
+            && exists(/databases/$(database)/documents/admins/$(authEmail())));
+    }
+
+    function isString(v, max) {
+      return v is string && v.size() > 0 && v.size() <= max;
+    }
+
+    // A stored link must be an absolute http(s) URL — never `javascript:`,
+    // `data:`, `vbscript:` or a protocol-relative `//host`. These values are
+    // rendered as href="…" on the public site.
+    function isHttpUrl(v, max) {
+      return isString(v, max) && v.matches('https?://[^ ]+');
+    }
+
+    // An inline image is either an https URL or a base64 data: URL for a
+    // raster type. `data:image/svg+xml` is intentionally excluded — SVG can
+    // carry script.
+    function isImageValue(v, max) {
+      return isString(v, max)
+        && (v.matches('https://[^ ]+')
+            || v.matches('data:image/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+'));
+    }
+
+    // Non-negative finite number (Firestore has no NaN literal, but reject
+    // negatives / non-numbers explicitly).
+    function isCount(v) {
+      return v is number && v >= 0;
+    }
+
+    // ---- Public roster ----------------------------------------------------
+    // Only name / section / optional role / order / optional profile photo (as
+    // a base64 data URL) / optional email / optional link are allowed. No IDs,
+    // no payment info — those never belong in a public collection.
+    match /members/{memberId} {
+      allow read: if true;
+
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['name', 'section', 'role', 'order',
+             'photoUrl', 'email', 'link'])
+        && isString(request.resource.data.name, 80)
+        && isString(request.resource.data.section, 16)
+        && (!('role' in request.resource.data)
+            || request.resource.data.role in ['President',
+                 'Vice President - Internal', 'Vice President - External',
+                 'Secretary', 'Treasurer', 'Auditor',
+                 'P.R.O. - Internal', 'P.R.O. - External',
+                 'Pubmat Head', 'Committee Head', 'Committee Member',
+                 '1st Year Representative', '2nd Year Representative',
+                 '3rd Year Representative', '4th Year Representative',
+                 'Officer', 'Member'])
+        && (!('order' in request.resource.data)
+            || (request.resource.data.order is int
+                && request.resource.data.order >= 0))
+        && (!('photoUrl' in request.resource.data)
+            || isImageValue(request.resource.data.photoUrl, 1000000))
+        && (!('email' in request.resource.data)
+            || (isString(request.resource.data.email, 120)
+                && request.resource.data.email.matches('[^@ ]+@[^@ ]+[.][^@ ]+')))
+        && (!('link' in request.resource.data)
+            || isHttpUrl(request.resource.data.link, 400));
+
+      allow delete: if isAdmin();
+    }
+
+    // ---- Optional realtime totals mirror --------------------------------
+    // An admin may push aggregate numbers here for live updates. No personal data.
+    match /summary/{docId} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['totalCollected', 'remainingFunds', 'spent', 'totalMembers',
+              'contributors', 'updatedAt'])
+        && request.resource.data.totalCollected is number
+        && (!('remainingFunds' in request.resource.data)
+            || request.resource.data.remainingFunds is number)
+        && (!('spent' in request.resource.data)
+            || request.resource.data.spent is number)
+        && (!('totalMembers' in request.resource.data)
+            || isCount(request.resource.data.totalMembers))
+        && (!('contributors' in request.resource.data)
+            || isCount(request.resource.data.contributors))
+        && (!('updatedAt' in request.resource.data)
+            || request.resource.data.updatedAt is timestamp);
+    }
+
+    // ---- Manual announcements ------------------------------------------
+    // Admins post announcements that appear on top of the Facebook feed.
+    // Public read; admin write with field-shape validation.
+    match /announcements/{annId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(
+             ['title', 'body', 'date', 'tag', 'important', 'link', 'image',
+              'createdAt'])
+        && isString(request.resource.data.title, 120)
+        && isString(request.resource.data.body, 4000)
+        && isString(request.resource.data.date, 32)
+        && (!('tag' in request.resource.data)
+            || request.resource.data.tag in ['Funds', 'Event', 'Notice', 'Update'])
+        && (!('important' in request.resource.data)
+            || request.resource.data.important is bool)
+        && (!('link' in request.resource.data)
+            || isHttpUrl(request.resource.data.link, 400))
+        && (!('image' in request.resource.data)
+            || isImageValue(request.resource.data.image, 1000000));
+      allow delete: if isAdmin();
+    }
+
+    // ---- Admin whitelist -----------------------------------------------
+    // Docs are keyed by e-mail address. A signed-in user may read their OWN
+    // entry (the dashboard uses this to gate access); the owner sees the whole
+    // list and is the only writer. The owner's own e-mail can never be a row.
+    match /admins/{adminEmail} {
+      allow get: if isOwner() || (isVerified() && adminEmail == authEmail());
+      allow list: if isOwner();
+
+      allow create: if isOwner()
+        && adminEmail != ownerEmail()
+        && request.resource.data.keys().hasOnly(['email', 'addedBy', 'addedAt'])
+        && request.resource.data.email == adminEmail;
+      allow delete: if isOwner() && adminEmail != ownerEmail();
+      allow update: if false;
+    }
+
+    // ---- Everything else is denied ------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

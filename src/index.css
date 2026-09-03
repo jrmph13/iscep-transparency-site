@@ -1,0 +1,149 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ---- Theme tokens. Light is the default (school). ---- */
+  :root {
+    color-scheme: light;
+    --c-canvas: 248 250 252; /* slate-50  */
+    --c-surface: 255 255 255; /* white     */
+    --c-surface2: 241 245 249; /* slate-100 */
+    --c-line: 226 232 240; /* slate-200 */
+    --c-ink: 15 23 42; /* slate-900 */
+    --c-muted: 51 65 85; /* slate-700 */
+    --c-faint: 71 85 105; /* slate-600 */
+    --c-dim: 100 116 139; /* slate-500 */
+  }
+
+  .dark {
+    color-scheme: dark;
+    --c-canvas: 5 7 15;
+    --c-surface: 12 19 38;
+    --c-surface2: 24 34 60;
+    --c-line: 33 44 68;
+    --c-ink: 255 255 255;
+    --c-muted: 203 213 225; /* slate-300 */
+    --c-faint: 148 163 184; /* slate-400 */
+    --c-dim: 113 128 150;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  html,
+  body {
+    background-color: rgb(var(--c-canvas));
+    overflow-x: hidden;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: rgb(var(--c-muted));
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: rgba(59, 130, 246, 0.25);
+  }
+
+  :focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--c-line)) transparent;
+  }
+  *::-webkit-scrollbar {
+    height: 10px;
+    width: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgb(var(--c-line));
+    border-radius: 999px;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  /* Currency / figures: aligned digits, in a font that has the ₱ glyph. */
+  .figure {
+    font-family: 'Inter', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1, 'cv01' 1;
+    letter-spacing: -0.01em;
+  }
+  .card {
+    @apply rounded-2xl border border-line bg-surface shadow-sm shadow-navy-900/[0.04] dark:shadow-none;
+  }
+  .card-hover {
+    @apply transition-colors hover:border-brand-500/40 hover:bg-surface2/60;
+  }
+  .kicker {
+    @apply font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-brand-600 dark:text-brand-400;
+  }
+  .animate-in {
+    animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-overlay {
+    animation: overlayIn 0.18s ease-out both;
+  }
+  .animate-pop {
+    animation: modalPop 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-line;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
