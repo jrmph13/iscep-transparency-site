@@ -69,3 +69,17 @@
   font-display: swap;
   src: url('../assets/fonts/Jersey716.ttf') format('truetype');
 }
+
+/* Distressed display — the TTF is ~1.5 MB, so it is NOT declared by default
+   (declaring it makes Vite bundle the file into every deploy even if unused).
+   To enable: uncomment this block. `font-brunson-rough` then works; until then
+   that utility falls back to plain Brunson.
+
+@font-face {
+  font-family: 'Brunson Rough';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('../assets/fonts/BrunsonRough.ttf') format('truetype');
+}
+*/

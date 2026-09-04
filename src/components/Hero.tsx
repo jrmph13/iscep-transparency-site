@@ -163,7 +163,7 @@ export function Hero({ summary, meta }: { summary: Summary; meta: Meta }) {
             <CountUp
               value={totalCollected}
               format={(x) => peso(x)}
-              className="figure text-2xl font-bold text-ink sm:text-3xl"
+              className="stat text-3xl text-ink sm:text-4xl"
             />
             <span className="pb-1 text-sm text-dim">/ {peso(expectedMembership)}</span>
           </div>
@@ -200,15 +200,15 @@ function Figure({
         (tone === 'brand' ? 'border-brand-500/40 bg-brand-500/10' : 'border-line bg-surface2/60')
       }
     >
-      <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-faint">
+      <div className="label flex items-center gap-1.5">
         {dot && <span className={'h-1.5 w-1.5 rounded-full ' + dot} />}
         {label}
       </div>
-      <div className="mt-1 text-lg font-semibold text-ink sm:text-xl">
+      <div className="mt-0.5 text-2xl text-ink sm:text-[1.6rem]">
         {value == null ? (
-          <span className="figure">—</span>
+          <span className="stat">—</span>
         ) : (
-          <CountUp value={value} format={(x) => peso(x)} className="figure" />
+          <CountUp value={value} format={(x) => peso(x)} className="stat" />
         )}
       </div>
     </div>

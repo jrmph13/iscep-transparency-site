@@ -80,10 +80,8 @@ export function StatGrid({ summary }: { summary: Summary }) {
                     : 'border-line bg-surface2/60')
                 }
               >
-                <div className="text-[11px] uppercase tracking-wide text-faint">
-                  {FEE_LABELS[key] ?? key}
-                </div>
-                <div className="figure mt-1 text-lg font-semibold text-ink">{num(count)}</div>
+                <div className="label">{FEE_LABELS[key] ?? key}</div>
+                <div className="stat mt-0.5 text-2xl text-ink">{num(count)}</div>
               </div>
             ))}
           </div>
@@ -121,11 +119,11 @@ function Stat({
             : 'card card-hover')
       }
     >
-      <div className="text-[11px] uppercase tracking-wide text-faint">{label}</div>
+      <div className="label">{label}</div>
       <CountUp
         value={value}
         format={fmt}
-        className="figure mt-1.5 block text-2xl font-semibold text-ink"
+        className="stat mt-1 block text-3xl text-ink"
       />
       <div className="mt-1 text-xs text-faint">{sub}</div>
       {bar != null && (

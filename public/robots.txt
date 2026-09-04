@@ -1,4 +1,22 @@
+# Only the landing page is meant to be indexed. The record lookup, the admin
+# console and the build assets are not.
 User-agent: *
 Allow: /$
 Disallow: /assets/
 Disallow: /payments/
+Disallow: /iscep/
+Disallow: /*?*
+
+# Known mass-scrapers / AI crawlers — opt out.
+User-agent: GPTBot
+Disallow: /
+User-agent: CCBot
+Disallow: /
+User-agent: ClaudeBot
+Disallow: /
+User-agent: Google-Extended
+Disallow: /
+User-agent: Bytespider
+Disallow: /
+User-agent: PerplexityBot
+Disallow: /

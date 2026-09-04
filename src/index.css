@@ -52,14 +52,14 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Headings are Inter at a heavy weight — tighten tracking for a crisp,
-     modern display feel. */
+  /* Headings render in Brunson (font-display). It is a display face — keep
+     tracking neutral and let the letterforms carry the character. */
   h1,
   h2,
   h3,
   h4 {
-    letter-spacing: -0.021em;
-    font-feature-settings: 'ss03' 1;
+    font-family: 'Brunson', 'Inter Variable', Georgia, serif;
+    letter-spacing: 0;
   }
 
   ::selection {
@@ -102,11 +102,23 @@
   .card-hover {
     @apply transition-colors hover:border-brand-500/40 hover:bg-surface2/60;
   }
+  /* Bebas Neue — @font-face in src/fonts/fonts.css. Inlined (not @apply
+     font-bebas) so it never depends on utility generation. */
   .kicker {
     @apply text-[13px] font-normal uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400;
-    /* Bebas Neue — @font-face is in src/fonts/fonts.css. Inlined here (rather
-       than `@apply font-bebas`) so it never depends on utility generation. */
     font-family: 'Bebas Neue', 'Inter Variable', system-ui, sans-serif;
+  }
+  /* Stat-tile / small captions — same Bebas face, muted colour. */
+  .label {
+    @apply text-[12px] font-normal uppercase tracking-[0.11em] text-faint;
+    font-family: 'Bebas Neue', 'Inter Variable', system-ui, sans-serif;
+  }
+  /* Big scoreboard numbers — Jersey 716. Not for inline / table figures. */
+  .stat {
+    font-family: 'Jersey 716', 'Inter Variable', system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    font-weight: 400;
   }
   .animate-in {
     animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;

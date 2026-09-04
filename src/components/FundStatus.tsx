@@ -47,14 +47,14 @@ export function FundStatus({ summary, usage }: { summary: Summary; usage: FundUs
           </ul>
           <div className="mt-auto grid grid-cols-2 gap-3 border-t border-line pt-4">
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-dim">Total collected</div>
-              <div className="figure mt-0.5 text-lg font-semibold text-ink">
+              <div className="label">Total collected</div>
+              <div className="stat mt-0.5 text-2xl text-ink">
                 {peso(summary.totalCollected)}
               </div>
             </div>
             <div>
-              <div className="text-[11px] uppercase tracking-wide text-dim">Contributors</div>
-              <div className="figure mt-0.5 text-lg font-semibold text-ink">
+              <div className="label">Contributors</div>
+              <div className="stat mt-0.5 text-2xl text-ink">
                 {num(summary.contributors)}
               </div>
             </div>

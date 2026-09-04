@@ -37,15 +37,20 @@ function cspOnBuild(): Plugin {
 export default defineConfig({
   base: './',
   build: {
+    // No source maps in production — nothing to un-minify the bundle with.
     sourcemap: false,
     minify: 'terser',
     terserOptions: {
       // drop_debugger is OFF so the anti-inspection trap in clientHardening.ts
       // survives minification. drop_console stays ON for bundle hygiene.
-      compress: { drop_console: true, drop_debugger: false, passes: 2 },
-      mangle: true,
+      compress: { drop_console: true, drop_debugger: false, passes: 3 },
+      // toplevel: true also renames top-level names — makes view-source of the
+      // bundle close to unreadable without changing behaviour.
+      mangle: { toplevel: true },
       format: { comments: false },
     },
+    // Fold small chunks together so there are fewer readable entry points.
+    chunkSizeWarningLimit: 900,
   },
   plugins: [react(), cspOnBuild()],
 })
