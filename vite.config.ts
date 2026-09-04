@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react'
 // policy for HMR, so it is left alone there.
 // Keep in sync with the header version in vercel.json. `frame-ancestors` is
 // omitted here because browsers ignore it in a <meta> tag (the frame-buster in
-// public/theme-init.js covers clickjacking on GitHub Pages).
+// public/z9.js covers clickjacking on GitHub Pages).
 const CSP = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -26,10 +26,15 @@ function cspOnBuild(): Plugin {
     name: 'csp-meta-on-build',
     apply: 'build',
     transformIndexHtml(html) {
-      return html.replace(
-        '<meta charset="UTF-8" />',
-        `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`
-      )
+      return html
+        .replace(
+          '<meta charset="UTF-8" />',
+          `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`
+        )
+        // Strip HTML comments from the shipped index.html.
+        .replace(/<!--[\s\S]*?-->/g, '')
+        // Collapse the blank lines the strip leaves behind.
+        .replace(/\n\s*\n\s*\n/g, '\n')
     },
   }
 }
@@ -51,6 +56,15 @@ export default defineConfig({
     },
     // Fold small chunks together so there are fewer readable entry points.
     chunkSizeWarningLimit: 900,
+    rollupOptions: {
+      output: {
+        // Opaque output names — no `AdminDashboard`, `clientHardening`,
+        // `index`, `Logo1`, `inter-latin`… in the deploy. Just hashes.
+        entryFileNames: 'assets/[hash].js',
+        chunkFileNames: 'assets/[hash].js',
+        assetFileNames: 'assets/[hash][extname]',
+      },
+    },
   },
   plugins: [react(), cspOnBuild()],
 })

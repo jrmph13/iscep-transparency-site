@@ -3,8 +3,8 @@ import { peso, pct, relativeTime, fullDate } from '../lib/format'
 import type { Meta, Summary } from '../types'
 import { CountUp } from './CountUp'
 import { Slider } from './Slider'
-
-const asset = (f: string) => (import.meta.env.BASE_URL || '/') + f
+import brandMark from '../assets/b1.png'
+import brandWord from '../assets/b2.png'
 
 const SLIDES = [
   {
@@ -55,12 +55,12 @@ export function Hero({ summary, meta }: { summary: Summary; meta: Meta }) {
           <div className="text-center lg:text-left">
             <div className="flex items-center justify-center gap-4 sm:gap-5 lg:justify-start">
               <img
-                src={asset('Logo1.png')}
+                src={brandMark}
                 alt="ISCEP emblem"
                 className="h-14 w-14 object-contain drop-shadow-md sm:h-[4.5rem] sm:w-[4.5rem]"
               />
               <img
-                src={asset('Logo2.png')}
+                src={brandWord}
                 alt="Innovate · Integrate · Elevate"
                 className="h-14 w-[4.5rem] object-contain drop-shadow-md sm:h-[4.5rem] sm:w-24"
               />
