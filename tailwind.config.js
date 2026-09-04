@@ -46,9 +46,9 @@ export default {
       fontFamily: {
         // Single UI typeface. `display` and `body` are the same family — the
         // difference is weight + tracking, set where they are used.
-        sans: ['Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        display: ['Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
-        body: ['Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+        sans: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        display: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+        body: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
         // No mono webfont — fall back to the platform monospace for the few
         // code-ish bits (section codes, raw status lines).
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],

@@ -44,7 +44,7 @@
   }
 
   body {
-    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     color: rgb(var(--c-muted));
     font-feature-settings: 'cv05' 1, 'cv11' 1, 'ss03' 1; /* clearer l / 1 / a */
     -webkit-font-smoothing: antialiased;

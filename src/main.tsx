@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import '@fontsource-variable/inter' // self-hosted Inter (variable) — bundled, same-origin
 import './index.css'
 import { FEATURES } from './data/site'
 import { ADMIN_PATH } from './lib/router'
