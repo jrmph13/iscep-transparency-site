@@ -44,9 +44,14 @@ export default {
         },
       },
       fontFamily: {
-        display: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
-        body: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        // Single UI typeface. `display` and `body` are the same family — the
+        // difference is weight + tracking, set where they are used.
+        sans: ['Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        display: ['Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+        body: ['Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+        // No mono webfont — fall back to the platform monospace for the few
+        // code-ish bits (section codes, raw status lines).
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
       boxShadow: {
         glow: '0 0 0 1px rgba(59,130,246,0.25), 0 8px 40px -12px rgba(59,130,246,0.45)',
