@@ -56,6 +56,18 @@ export function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+/**
+ * Auto-insert the "YYYY-#####" dash as digits are typed. iOS's numeric
+ * keypad (inputMode="numeric") has no "-" key, so students on iPhone
+ * couldn't type the student-number format at all — this derives the dash
+ * from digit count instead of requiring the user to type it.
+ */
+export function formatStudentId(raw: string): string {
+  const digits = raw.replace(/\D/g, '')
+  if (digits.length <= 4) return digits
+  return `${digits.slice(0, 4)}-${digits.slice(4)}`
+}
+
 export function fullDate(iso: string): string {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso

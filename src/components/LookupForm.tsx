@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatStudentId } from '../lib/format'
 import { honeypotFieldProps, isBotSubmission } from '../lib/lookupGuard'
 import { navigate, paymentPath } from '../lib/router'
 
@@ -25,7 +26,7 @@ export function LookupForm({
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           value={sid}
-          onChange={(e) => setSid(e.target.value)}
+          onChange={(e) => setSid(formatStudentId(e.target.value))}
           placeholder="Student number (2026-34567)"
           inputMode="numeric"
           className="figure w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-dim focus:border-brand-500/60 focus:outline-none"
