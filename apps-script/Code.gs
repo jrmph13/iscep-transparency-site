@@ -463,10 +463,13 @@ function doGet(e) {
       // the cap MUST fail closed — a cache outage is not a reason to open the
       // enumeration flood-gates.
       out = tx_rateOk_()
-        ? tx_recordBySid_(p.sid || '')
+        ? tx_recordCached_(p.sid || '')
         : { error: 'Too many lookups right now — try again in a minute.' };
     } else {
-      out = tx_summary_();
+      // Totals aren't fetched by the site anymore (they ship in the bundle),
+      // but keep the route working — served from a 60 s cache so a burst of
+      // requests can't make it re-scan the whole sheet each time.
+      out = tx_summaryCached_();
     }
   } catch (err) {
     // Log server-side; return a generic message so sheet structure / ranges
@@ -490,6 +493,41 @@ function tx_rateOk_() {
     // Fail CLOSED for the PII route — better a rare false "try again" than an
     // uncapped enumeration channel when the cache misbehaves.
     return false;
+  }
+}
+
+/* ---- Cheap-under-load wrappers (anti-flood) --------------------------
+ * Apps Script can't see a real client IP, so per-IP limiting isn't
+ * possible. What we CAN do: serve repeated requests from CacheService so a
+ * burst never re-reads the spreadsheet, and let Google's own per-project
+ * execution quota absorb the rest (it throttles, it doesn't bill).
+ * Front the whole site with Cloudflare (free) for network-layer DDoS
+ * protection — that is the real mitigation. */
+
+function tx_recordCached_(sid) {
+  var key = 'rec_' + tx_norm_(sid);
+  try {
+    var c = CacheService.getScriptCache();
+    var hit = c.get(key);
+    if (hit) return JSON.parse(hit);
+    var out = tx_recordBySid_(sid);
+    c.put(key, JSON.stringify(out), 30); // 30 s — lookups repeat while a user retries
+    return out;
+  } catch (err) {
+    return tx_recordBySid_(sid);
+  }
+}
+
+function tx_summaryCached_() {
+  try {
+    var c = CacheService.getScriptCache();
+    var hit = c.get('sum_v1');
+    if (hit) return JSON.parse(hit);
+    var out = tx_summary_();
+    c.put('sum_v1', JSON.stringify(out), 60); // 60 s
+    return out;
+  } catch (err) {
+    return tx_summary_();
   }
 }
 
