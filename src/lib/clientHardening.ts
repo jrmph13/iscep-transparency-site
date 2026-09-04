@@ -38,6 +38,17 @@ export function installClientHardening(opts: HardeningOptions = {}): void {
   if (import.meta.env.DEV) return
   if (typeof window === 'undefined') return
 
+  // Desktop only. On phones / tablets the browser chrome (address bar, tab bar)
+  // makes `outerHeight - innerHeight` huge, which used to false-trip the
+  // "DevTools open" heuristic and blank the whole page on iOS Safari. Mobile
+  // browsers also have no real DevTools to guard against.
+  const isTouch =
+    'ontouchstart' in window ||
+    (navigator.maxTouchPoints ?? 0) > 0 ||
+    !window.matchMedia?.('(pointer: fine)').matches
+  const isNarrow = Math.min(window.screen?.width || 9999, window.screen?.height || 9999) < 820
+  if (isTouch || isNarrow) return
+
   installed = true
   const action: TripAction = opts.onDetect ?? 'notfound'
   const useDebuggerTrap = opts.debuggerTrap ?? true
@@ -97,14 +108,21 @@ export function installClientHardening(opts: HardeningOptions = {}): void {
   )
 
   /* ---- 2. DevTools-open heuristic (viewport delta) ------------------- */
-  const SIZE_GAP = 170
+  // Desktop docked-DevTools only. Require the gap to persist across two checks
+  // so a transient reflow (opening a browser side panel, rotating, zoom) can't
+  // trip it.
+  const SIZE_GAP = 220
+  let strikes = 0
   const sizeCheck = () => {
     const wGap = window.outerWidth - window.innerWidth
     const hGap = window.outerHeight - window.innerHeight
-    if (wGap > SIZE_GAP || hGap > SIZE_GAP) trip()
+    if (wGap > SIZE_GAP || hGap > SIZE_GAP) {
+      if (++strikes >= 2) trip()
+    } else {
+      strikes = 0
+    }
   }
-  window.setInterval(sizeCheck, 1000)
-  window.addEventListener('resize', sizeCheck)
+  window.setInterval(sizeCheck, 1200)
 
   /* ---- 3. Timing-based debugger trap -------------------------------- */
   // Note: `vite.config.ts` sets terser `drop_debugger: false` so this literal

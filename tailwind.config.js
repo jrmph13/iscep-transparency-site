@@ -44,18 +44,19 @@ export default {
         },
       },
       fontFamily: {
-        // Body / UI text, tables, numbers — Inter (self-hosted variable).
+        // Everything readable — body copy, headings, tables, numbers — is Inter
+        // (self-hosted variable). Headings just use a heavier weight + tighter
+        // tracking; see the h1–h4 rule in index.css.
         sans: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
         body: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
-        // Display headings — Brunson (self-hosted), Inter as the fallback.
-        display: ['Brunson', '"Inter Variable"', 'Georgia', 'serif'],
-        // Eyebrow / kicker labels — Bebas Neue (condensed all-caps).
-        // Named `bebas` (not `condensed`) because v3 ships a built-in
-        // `font-condensed` utility for the `font-stretch` property, which
-        // would otherwise shadow our `font-family` utility and break @apply.
+        display: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+        // Eyebrow / kicker labels only — Bebas Neue (condensed all-caps).
         bebas: ['"Bebas Neue"', '"Inter Variable"', 'sans-serif'],
-        // Optional accent (varsity block) — not applied anywhere by default.
-        accent: ['"Jersey 716"', '"Inter Variable"', 'sans-serif'],
+        // Available brand display faces — apply explicitly where wanted
+        // (font-brunson / font-jersey). Not used by default: as headline fonts
+        // they read heavy/rough for a finance page.
+        brunson: ['Brunson', '"Inter Variable"', 'Georgia', 'serif'],
+        jersey: ['"Jersey 716"', '"Inter Variable"', 'sans-serif'],
         // No mono webfont — platform monospace for section codes / raw lines.
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },

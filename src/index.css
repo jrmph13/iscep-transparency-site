@@ -52,13 +52,14 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Headings render in Brunson via the `font-display` utility. Brunson is a
-     display serif, so keep tracking near-neutral (no tight sans tracking). */
+  /* Headings are Inter at a heavy weight — tighten tracking for a crisp,
+     modern display feel. */
   h1,
   h2,
   h3,
   h4 {
-    letter-spacing: -0.005em;
+    letter-spacing: -0.021em;
+    font-feature-settings: 'ss03' 1;
   }
 
   ::selection {
@@ -103,11 +104,9 @@
   }
   .kicker {
     @apply text-[13px] font-normal uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400;
-    /* Inlined instead of `@apply font-bebas` because @apply against custom
-       fontFamily utilities occasionally fails to resolve under PostCSS with
-       certain module/caching combinations, even when the class is generated.
-       The Bebas Neue @font-face lives in src/fonts/fonts.css. */
-    font-family: '"Bebas Neue"', '"Inter Variable"', sans-serif;
+    /* Bebas Neue — @font-face is in src/fonts/fonts.css. Inlined here (rather
+       than `@apply font-bebas`) so it never depends on utility generation. */
+    font-family: 'Bebas Neue', 'Inter Variable', system-ui, sans-serif;
   }
   .animate-in {
     animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
