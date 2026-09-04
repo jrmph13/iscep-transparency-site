@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
+import obfuscator from 'vite-plugin-javascript-obfuscator'
 
 // Content-Security-Policy for the built site (GitHub Pages can't set headers,
 // so it goes in a <meta>). Only applied on `vite build` — dev needs a looser
@@ -39,21 +40,15 @@ function cspOnBuild(): Plugin {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   base: './',
   build: {
     // No source maps in production — nothing to un-minify the bundle with.
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      // drop_debugger is OFF so the anti-inspection trap in clientHardening.ts
-      // survives minification. drop_console stays ON for bundle hygiene.
-      compress: { drop_console: true, drop_debugger: false, passes: 3 },
-      // toplevel: true also renames top-level names — makes view-source of the
-      // bundle close to unreadable without changing behaviour.
-      mangle: { toplevel: true },
-      format: { comments: false },
-    },
+    // esbuild minifier is faster AND lets us strip console/debugger call sites
+    // at compile time (drop / pure). Keep errors so genuine runtime issues are
+    // still visible in the console.
+    minify: 'esbuild',
     // Fold small chunks together so there are fewer readable entry points.
     chunkSizeWarningLimit: 900,
     rollupOptions: {
@@ -63,8 +58,61 @@ export default defineConfig({
         entryFileNames: 'assets/[hash].js',
         chunkFileNames: 'assets/[hash].js',
         assetFileNames: 'assets/[hash][extname]',
+        // Isolate admin-only code into its own chunk so obfuscation (below)
+        // can target just that chunk instead of bloating the public bundle.
+        manualChunks(id) {
+          if (
+            id.includes('src/components/admin') ||
+            id.includes('src/lib/adminWrites') ||
+            id.includes('src/lib/useAdmin')
+          ) {
+            return 'admin'
+          }
+        },
       },
     },
   },
-  plugins: [react(), cspOnBuild()],
-})
+  esbuild: {
+    // Strip `debugger` statements in prod. (No `debugger` trap any more — see
+    // src/lib/deterrence.ts for the non-blocking Tier B approach.)
+    drop: mode === 'production' ? ['debugger'] : [],
+    // Pure-mark noisy console calls so esbuild removes them entirely. Keep
+    // `console.error` so genuine failures are still surfaced.
+    pure:
+      mode === 'production'
+        ? ['console.log', 'console.info', 'console.debug', 'console.warn']
+        : [],
+    legalComments: 'none',
+  },
+  plugins: [
+    react(),
+    cspOnBuild(),
+    // Obfuscate only the admin chunk (see manualChunks above) — hitting the
+    // sensitive code hardest without bloating/slowing the public bundle.
+    // NOT a security boundary (it's still client-side JS), just raises the
+    // bar above "read the pretty-printed source".
+    mode === 'production' &&
+      obfuscator({
+        // Matched against each module's absolute source path pre-bundle —
+        // keep these in sync with the manualChunks admin matcher above.
+        include: [
+          'src/components/admin/**',
+          'src/lib/adminWrites.ts',
+          'src/lib/useAdmin.ts',
+        ],
+        apply: 'build',
+        options: {
+          compact: true,
+          identifierNamesGenerator: 'hexadecimal',
+          stringArray: true,
+          stringArrayEncoding: ['base64'],
+          stringArrayThreshold: 0.75,
+          // Keep off — big perf/size cost for little real benefit:
+          selfDefending: false,
+          debugProtection: false,
+          deadCodeInjection: false,
+          controlFlowFlattening: false,
+        },
+      }),
+  ].filter(Boolean),
+}))

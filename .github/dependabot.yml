@@ -1,0 +1,30 @@
+# Dependabot — weekly dependency + GitHub Actions updates.
+# Pin to weekly so CI runs are predictable. `npm ci` already pins to the
+# lockfile, so upgrades only land after a PR is reviewed and merged.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "security"
+    # Group non-major bumps so the PR list stays manageable.
+    groups:
+      production:
+        dependency-type: "production"
+      development:
+        dependency-type: "development"
+    # Auto-rebase is intentionally OFF — every bump needs a human glance.
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "ci"

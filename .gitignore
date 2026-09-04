@@ -20,3 +20,6 @@ dist-ssr
 
 # local-only sheet id (keep private)
 sheet.config.json
+
+# local bundle-size baseline (size-delta gate helper)
+.baseline-js-css-bytes.txt

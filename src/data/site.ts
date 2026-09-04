@@ -74,13 +74,15 @@ export const FEATURES = {
   facebookEmbed: true,
 
   /**
-   * Casual anti-inspection deterrent on the PUBLIC pages: blocks the context
-   * menu + devtools keyboard shortcuts and, if devtools is detected, swaps the
-   * page for a "404". This is FRICTION ONLY — it is trivially bypassed with a
-   * proxy, `curl`, or by disabling JavaScript, and it does nothing for data
-   * that is already sensitive. Real protection is a private sheet + App Check.
+   * Tier B deterrence on the PUBLIC pages (see src/lib/deterrence.ts):
+   * swallows devtools/view-source hotkeys, emits one-shot telemetry signals,
+   * and prints a Self-XSS console warning. It NEVER blanks/reloads the page,
+   * never loops a `debugger`, and honours an opt-out (`?debug=1` or
+   * localStorage `allow_devtools=1`). FRICTION ONLY — trivially bypassed with a
+   * proxy, `curl`, or by disabling JavaScript. Real protection is a private
+   * sheet + Firestore rules + App Check.
    *
-   * Never active in `npm run dev`, and never on the /admin route.
+   * No-op in `npm run dev` (guards on import.meta.env.PROD); never on /admin.
    */
   clientHardening: true,
 
