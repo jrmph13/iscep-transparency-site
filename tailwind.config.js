@@ -50,7 +50,10 @@ export default {
         // Display headings — Brunson (self-hosted), Inter as the fallback.
         display: ['Brunson', '"Inter Variable"', 'Georgia', 'serif'],
         // Eyebrow / kicker labels — Bebas Neue (condensed all-caps).
-        condensed: ['"Bebas Neue"', '"Inter Variable"', 'sans-serif'],
+        // Named `bebas` (not `condensed`) because v3 ships a built-in
+        // `font-condensed` utility for the `font-stretch` property, which
+        // would otherwise shadow our `font-family` utility and break @apply.
+        bebas: ['"Bebas Neue"', '"Inter Variable"', 'sans-serif'],
         // Optional accent (varsity block) — not applied anywhere by default.
         accent: ['"Jersey 716"', '"Inter Variable"', 'sans-serif'],
         // No mono webfont — platform monospace for section codes / raw lines.

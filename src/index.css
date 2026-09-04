@@ -102,7 +102,12 @@
     @apply transition-colors hover:border-brand-500/40 hover:bg-surface2/60;
   }
   .kicker {
-    @apply font-condensed text-[13px] font-normal uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400;
+    @apply text-[13px] font-normal uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400;
+    /* Inlined instead of `@apply font-bebas` because @apply against custom
+       fontFamily utilities occasionally fails to resolve under PostCSS with
+       certain module/caching combinations, even when the class is generated.
+       The Bebas Neue @font-face lives in src/fonts/fonts.css. */
+    font-family: '"Bebas Neue"', '"Inter Variable"', sans-serif;
   }
   .animate-in {
     animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;

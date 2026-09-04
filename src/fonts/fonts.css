@@ -4,7 +4,7 @@
  *
  *   Inter Variable  → body / UI text, numbers, tables   (src/fonts/*.woff2)
  *   Brunson         → display headings (font-display)    (src/assets/fonts)
- *   Bebas Neue      → eyebrow / kicker labels (.kicker · font-condensed)
+ *   Bebas Neue      → eyebrow / kicker labels (.kicker · font-bebas)
  *   Jersey 716      → optional accent (font-accent) — not used by default
  *
  * "Brunson Rough.ttf" (1.5 MB, distressed) is intentionally NOT loaded — far
