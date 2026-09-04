@@ -52,13 +52,13 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Headings: same family, tighter tracking for a professional display feel. */
+  /* Headings render in Brunson via the `font-display` utility. Brunson is a
+     display serif, so keep tracking near-neutral (no tight sans tracking). */
   h1,
   h2,
   h3,
   h4 {
-    letter-spacing: -0.021em;
-    font-feature-settings: 'ss03' 1;
+    letter-spacing: -0.005em;
   }
 
   ::selection {
@@ -102,7 +102,7 @@
     @apply transition-colors hover:border-brand-500/40 hover:bg-surface2/60;
   }
   .kicker {
-    @apply text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-600 dark:text-brand-400;
+    @apply font-condensed text-[13px] font-normal uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400;
   }
   .animate-in {
     animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;

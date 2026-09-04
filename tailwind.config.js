@@ -44,13 +44,16 @@ export default {
         },
       },
       fontFamily: {
-        // Single UI typeface. `display` and `body` are the same family — the
-        // difference is weight + tracking, set where they are used.
+        // Body / UI text, tables, numbers — Inter (self-hosted variable).
         sans: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', 'sans-serif'],
-        display: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
         body: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
-        // No mono webfont — fall back to the platform monospace for the few
-        // code-ish bits (section codes, raw status lines).
+        // Display headings — Brunson (self-hosted), Inter as the fallback.
+        display: ['Brunson', '"Inter Variable"', 'Georgia', 'serif'],
+        // Eyebrow / kicker labels — Bebas Neue (condensed all-caps).
+        condensed: ['"Bebas Neue"', '"Inter Variable"', 'sans-serif'],
+        // Optional accent (varsity block) — not applied anywhere by default.
+        accent: ['"Jersey 716"', '"Inter Variable"', 'sans-serif'],
+        // No mono webfont — platform monospace for section codes / raw lines.
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
       },
       boxShadow: {
