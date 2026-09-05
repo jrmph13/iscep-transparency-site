@@ -26,6 +26,8 @@ import { getDb } from '../../lib/firebase'
 import type { Member } from '../../types'
 import { Logo } from '../Logo'
 
+type Tab = 'overview' | 'members' | 'announcements' | 'totals' | 'access'
+
 export function AdminDashboard() {
   const admin = useAdmin()
 
@@ -87,14 +89,10 @@ export function AdminDashboard() {
         )}
 
         {admin.status === 'ready' && (
-          <div className="space-y-10">
-            <MembersManager />
-            <AnnouncementsManager />
-            <SummaryEditor />
-            {admin.isOwner && (
-              <AdminsManager addedBy={(admin.user?.email || OWNER_EMAIL).toLowerCase()} />
-            )}
-          </div>
+          <ReadyDashboard
+            isOwner={admin.isOwner}
+            addedBy={(admin.user?.email || OWNER_EMAIL).toLowerCase()}
+          />
         )}
       </main>
     </div>
@@ -129,6 +127,129 @@ function LoginCard({
   )
 }
 
+/* ---------------- Ready shell: tabs + overview ---------------- */
+
+const TAB_LABEL: Record<Tab, string> = {
+  overview: 'Overview',
+  members: 'Members',
+  announcements: 'Announcements',
+  totals: 'Live totals',
+  access: 'Access',
+}
+
+function ReadyDashboard({ isOwner, addedBy }: { isOwner: boolean; addedBy: string }) {
+  const [tab, setTab] = useState<Tab>('overview')
+  const membersState = useMembers()
+  const annState = useAnnouncements()
+  const tabs: Tab[] = ['overview', 'members', 'announcements', 'totals', ...(isOwner ? (['access'] as Tab[]) : [])]
+
+  return (
+    <div>
+      <nav className="mb-8 flex gap-1 overflow-x-auto border-b border-line">
+        {tabs.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={
+              'relative shrink-0 whitespace-nowrap px-3 py-2.5 text-sm font-medium transition-colors ' +
+              (tab === t ? 'text-ink' : 'text-faint hover:text-ink')
+            }
+          >
+            {TAB_LABEL[t]}
+            {tab === t && (
+              <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand-600" />
+            )}
+          </button>
+        ))}
+      </nav>
+
+      {tab === 'overview' && (
+        <Overview members={membersState} announcements={annState} onNavigate={setTab} />
+      )}
+      {tab === 'members' && <MembersManager members={membersState} />}
+      {tab === 'announcements' && <AnnouncementsManager announcements={annState} />}
+      {tab === 'totals' && <SummaryEditor />}
+      {tab === 'access' && isOwner && <AdminsManager addedBy={addedBy} />}
+    </div>
+  )
+}
+
+function Overview({
+  members,
+  announcements,
+  onNavigate,
+}: {
+  members: ReturnType<typeof useMembers>
+  announcements: ReturnType<typeof useAnnouncements>
+  onNavigate: (t: Tab) => void
+}) {
+  const officers = members.members.filter((m) => m.role && m.role !== 'Member').length
+  const pinned = announcements.items.filter((a) => a.important).length
+
+  const cards: { label: string; value: string; sub: string; onClick: () => void }[] = [
+    {
+      label: 'Members on record',
+      value: members.status === 'live' ? String(members.members.length) : '—',
+      sub: `${officers} with an officer role`,
+      onClick: () => onNavigate('members'),
+    },
+    {
+      label: 'Manual announcements',
+      value: announcements.status === 'live' ? String(announcements.items.length) : '—',
+      sub: `${pinned} pinned to top`,
+      onClick: () => onNavigate('announcements'),
+    },
+  ]
+
+  return (
+    <div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {cards.map((c) => (
+          <button
+            key={c.label}
+            onClick={c.onClick}
+            className="card card-hover p-4 text-left"
+          >
+            <div className="label">{c.label}</div>
+            <div className="stat mt-0.5 text-3xl text-ink">{c.value}</div>
+            <div className="mt-1 text-xs text-faint">{c.sub}</div>
+          </button>
+        ))}
+      </div>
+
+      <div className="card mt-3 p-4">
+        <div className="kicker">Quick actions</div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={() => onNavigate('members')}
+            className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink hover:bg-surface2"
+          >
+            + Add a member
+          </button>
+          <button
+            onClick={() => onNavigate('announcements')}
+            className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink hover:bg-surface2"
+          >
+            + Post an announcement
+          </button>
+          <button
+            onClick={() => onNavigate('totals')}
+            className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink hover:bg-surface2"
+          >
+            Push live totals
+          </button>
+          <a
+            href="#/"
+            className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink hover:bg-surface2"
+          >
+            View public site ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ---------------- Members ---------------- */
 
 const BLANK: MemberInput = {
@@ -141,8 +262,8 @@ const BLANK: MemberInput = {
   link: '',
 }
 
-function MembersManager() {
-  const { members, status } = useMembers()
+function MembersManager({ members: membersState }: { members: ReturnType<typeof useMembers> }) {
+  const { members, status } = membersState
   const [draft, setDraft] = useState<MemberInput>(BLANK)
   const [draftFile, setDraftFile] = useState<File | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -151,6 +272,7 @@ function MembersManager() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
+  const [q, setQ] = useState('')
   const draftFileRef = useRef<HTMLInputElement | null>(null)
   const editFileRef = useRef<HTMLInputElement | null>(null)
 
@@ -164,6 +286,17 @@ function MembersManager() {
       ),
     [members]
   )
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase()
+    if (!needle) return sorted
+    return sorted.filter(
+      (m) =>
+        (m.name || '').toLowerCase().includes(needle) ||
+        (m.section || '').toLowerCase().includes(needle) ||
+        (m.role || '').toLowerCase().includes(needle)
+    )
+  }, [sorted, q])
 
   async function run(fn: () => Promise<void>) {
     setBusy(true)
@@ -326,6 +459,20 @@ function MembersManager() {
 
       {err && <p className="mt-2 text-xs text-rose-500">{err}</p>}
 
+      <div className="mt-3 flex items-center gap-2">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search by name, section, or role…"
+          className="w-full max-w-xs rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-ink placeholder:text-dim focus:border-brand-500/60 focus:outline-none sm:max-w-sm"
+        />
+        {q && (
+          <span className="text-xs text-dim">
+            {filtered.length} of {sorted.length} · reordering disabled while searching
+          </span>
+        )}
+      </div>
+
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase tracking-wide text-dim">
@@ -338,15 +485,16 @@ function MembersManager() {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((m) => {
+            {filtered.map((m) => {
               const editing = editingId === m.id
+              const reorderable = !q.trim()
               return (
                 <tr
                   key={m.id}
-                  draggable={!editing}
-                  onDragStart={onDragStart(m.id)}
-                  onDragOver={onDragOver}
-                  onDrop={onDrop(m.id)}
+                  draggable={!editing && reorderable}
+                  onDragStart={reorderable ? onDragStart(m.id) : undefined}
+                  onDragOver={reorderable ? onDragOver : undefined}
+                  onDrop={reorderable ? onDrop(m.id) : undefined}
                   className={'border-t border-line ' + (dragId === m.id ? 'opacity-50' : '')}
                 >
                   {editing ? (
@@ -470,8 +618,11 @@ function MembersManager() {
                         <div className="flex items-center gap-2">
                           <span
                             aria-hidden
-                            className="cursor-grab select-none text-faint"
-                            title="Drag to reorder"
+                            className={
+                              'select-none text-faint ' +
+                              (reorderable ? 'cursor-grab' : 'opacity-30')
+                            }
+                            title={reorderable ? 'Drag to reorder' : 'Clear search to reorder'}
                           >
                             ⋮⋮
                           </span>
@@ -503,7 +654,9 @@ function MembersManager() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => move(m.id, -1)}
-                            disabled={busy || sorted.findIndex((x) => x.id === m.id) === 0}
+                            disabled={
+                              busy || !reorderable || sorted.findIndex((x) => x.id === m.id) === 0
+                            }
                             title="Move up"
                             className="rounded border border-line px-1.5 py-0.5 text-xs text-ink hover:bg-surface2 disabled:opacity-30"
                           >
@@ -511,7 +664,11 @@ function MembersManager() {
                           </button>
                           <button
                             onClick={() => move(m.id, 1)}
-                            disabled={busy || sorted.findIndex((x) => x.id === m.id) === sorted.length - 1}
+                            disabled={
+                              busy ||
+                              !reorderable ||
+                              sorted.findIndex((x) => x.id === m.id) === sorted.length - 1
+                            }
                             title="Move down"
                             className="rounded border border-line px-1.5 py-0.5 text-xs text-ink hover:bg-surface2 disabled:opacity-30"
                           >
@@ -547,10 +704,10 @@ function MembersManager() {
                 </tr>
               )
             })}
-            {sorted.length === 0 && (
+            {filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-3 py-6 text-center text-faint">
-                  No members yet — add the first above.
+                  {sorted.length === 0 ? 'No members yet — add the first above.' : 'No members match that search.'}
                 </td>
               </tr>
             )}
@@ -687,8 +844,12 @@ const ANN_BLANK: AnnouncementInput = {
 
 const ANN_TAGS = ['Funds', 'Event', 'Notice', 'Update'] as const
 
-function AnnouncementsManager() {
-  const { items, status } = useAnnouncements()
+function AnnouncementsManager({
+  announcements,
+}: {
+  announcements: ReturnType<typeof useAnnouncements>
+}) {
+  const { items, status } = announcements
   const [draft, setDraft] = useState<AnnouncementInput>(ANN_BLANK)
   const [draftFile, setDraftFile] = useState<File | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
