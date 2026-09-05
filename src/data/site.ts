@@ -40,10 +40,11 @@ export const APPS_SCRIPT_URL =
   'https://script.google.com/macros/s/AKfycbz9mwsNOFkfnVY126n-d5WmhtKbJLG-Fo0iC0bZjU8i2tlDncaSEaufIMtqSfzh5SmF/exec'
 
 /**
- * Read key sent to the Apps Script. NOT a real secret (it ships in this
- * bundle) — it only turns away casual `curl`. Override per-deploy with
- * VITE_APPS_SCRIPT_KEY and keep it equal to the TX_READ_KEY script property
- * on the Apps Script side.
+ * Read key sent to the Apps Script. Not a real secret — it ships in this
+ * bundle, so treat it as a deploy identifier, not access control. Override
+ * per-deploy with VITE_APPS_SCRIPT_KEY and keep it equal to the TX_READ_KEY
+ * script property on the Apps Script side. Real enforcement is the rate caps
+ * and (optionally) Turnstile on the Apps Script side.
  */
 export const APPS_SCRIPT_KEY =
   import.meta.env.VITE_APPS_SCRIPT_KEY || 'iscep-CHANGE-ME-2026'
@@ -93,9 +94,8 @@ export const FEATURES = {
    * swallows devtools/view-source hotkeys, emits one-shot telemetry signals,
    * and prints a Self-XSS console warning. It NEVER blanks/reloads the page,
    * never loops a `debugger`, and honours an opt-out (`?debug=1` or
-   * localStorage `allow_devtools=1`). FRICTION ONLY — trivially bypassed with a
-   * proxy, `curl`, or by disabling JavaScript. Real protection is a private
-   * sheet + Firestore rules + App Check.
+   * localStorage `allow_devtools=1`). Friction only, not a security boundary
+   * — real protection is a private sheet + Firestore rules + App Check.
    *
    * No-op in `npm run dev` (guards on import.meta.env.PROD); never on /admin.
    */

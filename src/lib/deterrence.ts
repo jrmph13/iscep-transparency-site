@@ -1,12 +1,8 @@
 /**
- * Tier B — Casual-copycat deterrence.
- *
- * ⚠️  NOT a security control. Trivially bypassed by anyone who knows what
- *    they're doing:
- *      • DevTools ▸ Sources ▸ "Deactivate breakpoints"
- *      • an intercepting proxy (Burp / mitmproxy) — the page JS never runs
- *      • `curl` / Postman — no browser at all
- *      • disabling JavaScript — the static markup still loads
+ * Tier B — Casual-copycat deterrence, not a security control. Anyone with
+ * real technical intent gets past this; it only raises the bar for casual
+ * inspection. Real protection lives server-side (Apps Script key + rate
+ * limits, Firestore rules) — see the module-level notes there.
  *
  * Design rules (from the hardening spec):
  *   1. No `debugger` statements.

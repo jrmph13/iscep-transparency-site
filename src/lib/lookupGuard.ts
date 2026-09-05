@@ -1,7 +1,7 @@
 /**
- * Client-side friction for the record lookup. This is NOT a security boundary —
- * anyone can call the sheet's gviz endpoint directly (see LOOKUP_SHEET_ID in
- * site.ts). It only slows casual enumeration through the UI and traps naive bots.
+ * Client-side friction for the record lookup. This is NOT a security boundary
+ * — the real enforcement is server-side (see apps-script/Code.gs). This just
+ * slows casual enumeration through the UI and traps naive bots.
  */
 
 const MIN_GAP_MS = 2500 // between two lookups

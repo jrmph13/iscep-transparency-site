@@ -448,10 +448,11 @@ function tx_ss_() {
   return SpreadsheetApp.openById(TX_SHEET_ID);
 }
 
-// Read key — must equal APPS_SCRIPT_KEY in src/data/site.ts. This is NOT a
-// real secret (it ships in the site's JS); it only blocks casual curling.
-// A `TX_READ_KEY` script property, when set, overrides this constant so the
-// value can be rotated without editing source.
+// Read key — must equal APPS_SCRIPT_KEY in src/data/site.ts. Not a real
+// secret (it ships in the site's JS) — treat it as a deploy identifier, not
+// access control. Real enforcement is the rate caps below plus (optionally)
+// Turnstile. A `TX_READ_KEY` script property, when set, overrides this
+// constant so the value can be rotated without editing source.
 var TX_API_KEY = PropertiesService.getScriptProperties().getProperty('TX_READ_KEY')
   || 'iscep-CHANGE-ME-2026';
 // Global cap on record lookups per minute (stops mass enumeration bursts).
