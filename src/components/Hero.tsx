@@ -5,6 +5,7 @@ import { CountUp } from './CountUp'
 import { Slider } from './Slider'
 import brandMark from '../assets/b1.png'
 import brandWord from '../assets/b2.png'
+import { useEffect, useState } from 'react'
 
 const SLIDES = [
   {
@@ -53,18 +54,20 @@ export function Hero({ summary, meta }: { summary: Summary; meta: Meta }) {
         <div className="relative mx-auto grid w-full max-w-6xl gap-10 px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-14 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-12">
           {/* Left — identity + CTAs */}
           <div className="text-center lg:text-left">
-            <div className="flex items-center justify-center gap-4 sm:gap-5 lg:justify-start">
-              <img
-                src={brandMark}
-                alt="ISCEP emblem"
-                className="h-14 w-14 object-contain drop-shadow-md sm:h-[4.5rem] sm:w-[4.5rem]"
-              />
-              <img
-                src={brandWord}
-                alt="Innovate · Integrate · Elevate"
-                className="h-14 w-[4.5rem] object-contain drop-shadow-md sm:h-[4.5rem] sm:w-24"
-              />
-            </div>
+            <LogoReveal>
+              <div className="flex items-center justify-center gap-4 sm:gap-5 lg:justify-start">
+                <img
+                  src={brandMark}
+                  alt="ISCEP emblem"
+                  className="h-20 w-20 object-contain drop-shadow-md sm:h-24 sm:w-24"
+                />
+                <img
+                  src={brandWord}
+                  alt="Innovate · Integrate · Elevate"
+                  className="h-20 w-36 object-contain drop-shadow-md sm:h-24 sm:w-44"
+                />
+              </div>
+            </LogoReveal>
 
             <span className="mt-5 block text-[10px] font-semibold uppercase tracking-[0.28em] text-brand-400 sm:text-[11px]">
               {ORG.parentLabel}
@@ -178,6 +181,26 @@ export function Hero({ summary, meta }: { summary: Summary; meta: Meta }) {
           </p>
         </div>
       </div>
+    </div>
+  )
+}
+
+function LogoReveal({ children }: { children: React.ReactNode }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 50)
+    return () => clearTimeout(t)
+  }, [])
+
+  return (
+    <div
+      className={
+        'transition-all duration-[1800ms] ease-[cubic-bezier(.22,1,.36,1)] motion-reduce:transition-none ' +
+        (visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0')
+      }
+    >
+      {children}
     </div>
   )
 }

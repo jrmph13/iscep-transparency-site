@@ -35,8 +35,8 @@ export function SplashScreen() {
         (phase === 'out' ? '-translate-y-full' : 'translate-y-0')
       }
     >
-      <div className="animate-[splashIn_0.6s_cubic-bezier(.22,1,.36,1)_both]">
-        <BrandLoader />
+      <div className="animate-[splashIn_1.8s_cubic-bezier(.22,1,.36,1)_both]">
+        <BrandLoader className="h-40 w-40" />
       </div>
     </div>
   )
