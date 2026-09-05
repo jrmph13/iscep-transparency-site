@@ -17,6 +17,7 @@ import { useRoute } from './lib/router'
 import { firebaseEnabled } from './lib/firebase'
 import { lazy, Suspense } from 'react'
 import { BrandLoader } from './components/BrandLoader'
+import { SplashScreen } from './components/SplashScreen'
 
 const AdminDashboard = lazy(() =>
   import('./components/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
@@ -28,14 +29,18 @@ export default function App() {
 
   if (route.name === 'admin') {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
-        <AdminDashboard />
-      </Suspense>
+      <>
+        <SplashScreen />
+        <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+          <AdminDashboard />
+        </Suspense>
+      </>
     )
   }
 
   return (
     <div className="min-h-screen bg-canvas text-muted">
+      <SplashScreen />
       <Nav />
 
       {route.name === 'home' && status === 'loading' && !data && <Skeleton />}
