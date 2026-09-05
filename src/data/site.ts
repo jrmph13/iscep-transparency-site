@@ -64,6 +64,21 @@ export const APPS_SCRIPT_KEY =
 export const LOOKUP_SHEET_ID = import.meta.env.VITE_LOOKUP_SHEET_ID || ''
 export const LOOKUP_SHEET_GID = import.meta.env.VITE_LOOKUP_SHEET_GID || '0'
 
+/**
+ * Cloudflare Turnstile site key for the record lookup (the one route that
+ * returns per-student PII, so it's the only route worth gating). Free,
+ * self-serve, no domain/DNS change needed — sign up at
+ * dash.cloudflare.com/?to=/:account/turnstile, create a widget for this
+ * site's origin, and set VITE_TURNSTILE_SITE_KEY at build time.
+ *
+ * Blank (default) disables the widget entirely and the lookup behaves exactly
+ * as before. The matching TX_TURNSTILE_SECRET script property on the Apps
+ * Script side is what actually enforces it — see apps-script/Code.gs. Setting
+ * only one side either does nothing (secret unset) or locks lookups out
+ * entirely (secret set, site key unset), so keep both in sync.
+ */
+export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || ''
+
 export const FEATURES = {
   /**
    * Show the live Facebook Page Plugin (an iframe) beside the announcement
@@ -155,6 +170,39 @@ export const FEE_INFO: { key: string; label: string; desc: string }[] = [
   { key: 'orgShirt', label: 'Org Shirt', desc: 'Payment for the official ISCEP shirt.' },
   { key: 'event', label: 'Event', desc: 'Contributions tied to a specific ISCEP event.' },
   { key: 'others', label: 'Others', desc: 'Any other logged collection.' },
+]
+
+export interface FaqItem {
+  q: string
+  a: string
+}
+
+/** Frequently asked questions, shown as an accordion above About. Edit freely. */
+export const FAQS: FaqItem[] = [
+  {
+    q: 'Why can’t I search for other students?',
+    a: 'The lookup only ever returns the one record matching the exact student number you type — there’s no way to browse or list everyone else’s records from here. That’s by design: names, receipt numbers and payment details stay between you and the auditor unless you already know the number.',
+  },
+  {
+    q: 'I paid, but my record still says "No amount yet." What do I do?',
+    a: 'The numbers here are a mirror of the auditor’s receipt sheet, refreshed every 30 minutes — so a very recent payment may just not have synced yet. If it still doesn’t show up after a day, message the auditor directly with your receipt number so they can check the entry.',
+  },
+  {
+    q: 'How often do the totals update?',
+    a: 'A scheduled job re-reads the receipt sheet and republishes this page every 30 minutes. The "Updated" timestamp near the top of the page always reflects the last successful sync.',
+  },
+  {
+    q: 'Can someone edit the numbers from this website?',
+    a: 'No. This site only reads — there’s no login, no form, and no code path here that writes back to the sheet. Every figure you see is computed straight from the auditor’s spreadsheet, which only the auditor can edit.',
+  },
+  {
+    q: 'Is my personal information safe here?',
+    a: 'The public sections show totals and per-section breakdowns only — no names, no student numbers, no receipt numbers. Your own record is shown only to you, and only after you type your own student number. See "Security & integrity" below for the full list.',
+  },
+  {
+    q: 'What if a total looks wrong?',
+    a: 'Start with your own receipt: search your student number above and check the amount against what you were issued. If something still doesn’t match, message the auditor with your receipt number — figures are only ever corrected on the source sheet, never on this page directly.',
+  },
 ]
 
 /** "Security & integrity" bullets in About — edit freely. */

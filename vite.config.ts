@@ -13,12 +13,12 @@ const CSP = [
   "base-uri 'self'",
   "object-src 'none'",
   "form-action 'self'",
-  "script-src 'self' https://apis.google.com",
+  "script-src 'self' https://apis.google.com https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   "img-src 'self' data: https://*.fbcdn.net https://*.xx.fbcdn.net https://*.googleusercontent.com",
-  "connect-src 'self' https://docs.google.com https://script.google.com https://script.googleusercontent.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://iscep-department.firebaseapp.com",
-  'frame-src https://www.facebook.com https://web.facebook.com https://staticxx.facebook.com https://iscep-department.firebaseapp.com https://accounts.google.com https://apis.google.com',
+  "connect-src 'self' https://docs.google.com https://script.google.com https://script.googleusercontent.com https://*.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://iscep-department.firebaseapp.com https://challenges.cloudflare.com",
+  'frame-src https://www.facebook.com https://web.facebook.com https://staticxx.facebook.com https://iscep-department.firebaseapp.com https://accounts.google.com https://apis.google.com https://challenges.cloudflare.com',
   'upgrade-insecure-requests',
 ].join('; ')
 

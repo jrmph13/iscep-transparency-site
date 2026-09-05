@@ -3,6 +3,7 @@ import { num, peso, pct } from '../lib/format'
 import type { Summary } from '../types'
 import { Section } from './Section'
 import { CountUp } from './CountUp'
+import { Reveal } from './Reveal'
 
 export function StatGrid({ summary }: { summary: Summary }) {
   const contribRate = summary.totalMembers ? summary.contributors / summary.totalMembers : 0
@@ -15,7 +16,7 @@ export function StatGrid({ summary }: { summary: Summary }) {
       title="Overview"
       subtitle="Totals worked out from the receipt sheet."
     >
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <Reveal stagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Members on record" value={summary.totalMembers} fmt={num} sub="rows in the sheet" />
         <Stat
           label="Contributors"
@@ -38,7 +39,7 @@ export function StatGrid({ summary }: { summary: Summary }) {
           sub={`avg ${peso(avg)} per contributor`}
           accent
         />
-      </div>
+      </Reveal>
 
       <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_1.4fr]">
         <div className="card p-5">

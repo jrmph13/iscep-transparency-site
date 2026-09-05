@@ -1,11 +1,12 @@
 import { Fragment, useState } from 'react'
-import { FEE_LABELS } from '../data/site'
+import { FEE_LABELS, TURNSTILE_SITE_KEY } from '../data/site'
 import { formatStudentId, num, peso } from '../lib/format'
 import { fetchRecord } from '../lib/api'
 import { checkLookupAllowed, honeypotFieldProps, isBotSubmission, noteLookup } from '../lib/lookupGuard'
 import { navigate, paymentPath } from '../lib/router'
 import type { LookupRecord } from '../types'
 import { Section } from './Section'
+import { Turnstile } from './Turnstile'
 
 type State =
   | { s: 'idle' }
@@ -23,12 +24,18 @@ export function RecordsTable({ total }: { total: number }) {
   const [sid, setSid] = useState('')
   const [hp, setHp] = useState('')
   const [state, setState] = useState<State>({ s: 'idle' })
+  const [cfToken, setCfToken] = useState('')
+  const [cfReset, setCfReset] = useState(0)
 
   async function search(e: React.FormEvent) {
     e.preventDefault()
     if (isBotSubmission(hp)) return
     const id = sid.trim()
     if (!id) return
+    if (TURNSTILE_SITE_KEY && !cfToken) {
+      setState({ s: 'error', msg: 'Please complete the verification below, then search again.' })
+      return
+    }
     const gate = checkLookupAllowed()
     if (!gate.ok) {
       setState({ s: 'error', msg: gate.reason })
@@ -37,10 +44,14 @@ export function RecordsTable({ total }: { total: number }) {
     noteLookup()
     setState({ s: 'loading' })
     try {
-      const r = await fetchRecord(id)
+      const r = await fetchRecord(id, cfToken)
       setState(r.found && r.records.length ? { s: 'found', records: r.records } : { s: 'none' })
     } catch (err) {
       setState({ s: 'error', msg: err instanceof Error ? err.message : String(err) })
+    } finally {
+      // Turnstile tokens are single-use server-side — line up a fresh one.
+      setCfToken('')
+      setCfReset((k) => k + 1)
     }
   }
 
@@ -62,12 +73,19 @@ export function RecordsTable({ total }: { total: number }) {
           />
           <button
             type="submit"
-            disabled={!sid.trim() || state.s === 'loading'}
+            disabled={!sid.trim() || state.s === 'loading' || (!!TURNSTILE_SITE_KEY && !cfToken)}
             className="shrink-0 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
           >
             {state.s === 'loading' ? 'Searching…' : 'Search'}
           </button>
         </form>
+
+        {TURNSTILE_SITE_KEY && (
+          <div className="mt-2 flex items-center gap-2">
+            <Turnstile onToken={setCfToken} resetKey={cfReset} />
+            {!cfToken && <span className="text-xs text-dim">Verifying you’re not a bot…</span>}
+          </div>
+        )}
 
         <div className="mt-4">
           {state.s === 'loading' && (
@@ -97,12 +115,20 @@ export function RecordsTable({ total }: { total: number }) {
               {state.records.map((r, i) => (
                 <RecordCard key={i} r={r} />
               ))}
-              <button
-                onClick={() => navigate(paymentPath(sid.trim()))}
-                className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400"
-              >
-                Open full view ↗
-              </button>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <button
+                  onClick={() => navigate(paymentPath(sid.trim()))}
+                  className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400"
+                >
+                  Open full view ↗
+                </button>
+                <CopyButton getText={() => state.records.map(summarize).join('\n\n')}>
+                  Copy summary
+                </CopyButton>
+                <CopyButton getText={() => location.origin + location.pathname + paymentPath(sid.trim())}>
+                  Copy link
+                </CopyButton>
+              </div>
             </div>
           )}
 
@@ -125,6 +151,57 @@ export function RecordsTable({ total }: { total: number }) {
         </div>
       </div>
     </Section>
+  )
+}
+
+/** Plain-text version of a record — handy to paste into Messenger for the auditor. */
+function summarize(r: LookupRecord): string {
+  return [
+    `Name: ${r.name || '—'}`,
+    `Year & section: ${r.section || '—'}`,
+    `Amount recorded: ${r.amount ? `${peso(r.amount)} (${r.amountLabel || '—'})` : '—'}`,
+    `Payment status: ${r.status || '—'}`,
+    `Date of payment: ${r.datePaid || '—'}`,
+    `Cashier: ${r.cashier || '—'}`,
+  ].join('\n')
+}
+
+/** Copies text to the clipboard on click, with a brief "Copied!" confirmation. */
+function CopyButton({ getText, children }: { getText: () => string; children: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(getText())
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      /* clipboard permission denied / unavailable — fail silently */
+    }
+  }
+
+  return (
+    <button
+      onClick={copy}
+      className="inline-flex items-center gap-1 text-xs text-faint hover:text-ink"
+    >
+      {copied ? (
+        <>
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-emerald-500" fill="none">
+            <path d="M5 12l4 4 10-10" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Copied!
+        </>
+      ) : (
+        <>
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
+            <rect x="9" y="9" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.6" />
+            <path d="M5 15V5a1 1 0 0 1 1-1h10" stroke="currentColor" strokeWidth="1.6" />
+          </svg>
+          {children}
+        </>
+      )}
+    </button>
   )
 }
 

@@ -6,6 +6,7 @@ import { SectionBreakdown } from './components/SectionBreakdown'
 import { Members } from './components/Members'
 import { AnnouncementsFeed } from './components/AnnouncementsFeed'
 import { RecordsTable } from './components/RecordsTable'
+import { FAQ } from './components/FAQ'
 import { About } from './components/About'
 import { SiteFooter } from './components/SiteFooter'
 import { PaymentLookup } from './components/PaymentLookup'
@@ -55,6 +56,7 @@ export default function App() {
             )}
             <Reveal><AnnouncementsFeed feed={data.announcements} /></Reveal>
             <Reveal><RecordsTable total={data.summary.totalMembers} /></Reveal>
+            <Reveal><FAQ /></Reveal>
             <Reveal><About meta={data.meta} summary={data.summary} /></Reveal>
           </main>
           <SiteFooter meta={data.meta} />

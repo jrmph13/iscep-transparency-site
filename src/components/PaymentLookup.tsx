@@ -1,11 +1,12 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
-import { FEE_LABELS, ORG } from '../data/site'
+import { FEE_LABELS, ORG, TURNSTILE_SITE_KEY } from '../data/site'
 import { peso, relativeTime } from '../lib/format'
 import { checkLookupAllowed, noteLookup } from '../lib/lookupGuard'
 import { navigate } from '../lib/router'
 import { fetchRecord } from '../lib/api'
 import type { LookupRecord } from '../types'
 import { LookupForm } from './LookupForm'
+import { Turnstile } from './Turnstile'
 
 type State =
   | { s: 'idle' }
@@ -20,6 +21,8 @@ type State =
 export function PaymentLookup({ id }: { id: string }) {
   const [state, setState] = useState<State>({ s: 'idle' })
   const [syncedAt, setSyncedAt] = useState<number | null>(null)
+  const [cfToken, setCfToken] = useState('')
+  const [cfReset, setCfReset] = useState(0)
   const aliveRef = useRef(true)
 
   const load = useCallback(
@@ -28,6 +31,10 @@ export function PaymentLookup({ id }: { id: string }) {
         setState({ s: 'idle' })
         return
       }
+      // Deep-linked lookups (?id=...) skip the form entirely, so this is the
+      // one place a scraper could iterate student numbers with no UI in the
+      // way — hold off until Turnstile has handed us a token.
+      if (TURNSTILE_SITE_KEY && !cfToken) return
       const gate = checkLookupAllowed()
       if (!gate.ok) {
         if (!opts.silent) setState({ s: 'error', message: gate.reason })
@@ -35,7 +42,7 @@ export function PaymentLookup({ id }: { id: string }) {
       }
       noteLookup()
       if (!opts.silent) setState({ s: 'loading' })
-      fetchRecord(id)
+      fetchRecord(id, cfToken)
         .then((r) => {
           if (!aliveRef.current) return
           setSyncedAt(Date.now())
@@ -50,8 +57,13 @@ export function PaymentLookup({ id }: { id: string }) {
           else if (e.name === 'LookupBadKey') setState({ s: 'bad-key' })
           else setState({ s: 'error', message: e.message })
         })
+        .finally(() => {
+          // Turnstile tokens are single-use server-side — line up a fresh one.
+          setCfToken('')
+          setCfReset((k) => k + 1)
+        })
     },
-    [id]
+    [id, cfToken]
   )
 
   useEffect(() => {
@@ -66,6 +78,8 @@ export function PaymentLookup({ id }: { id: string }) {
       window.removeEventListener('focus', onFocus)
     }
   }, [load])
+
+  const awaitingVerification = !!id && !!TURNSTILE_SITE_KEY && !cfToken && state.s === 'idle'
 
   return (
     <main className="animate-in mx-auto w-full max-w-3xl px-4 py-10 sm:px-6">
@@ -85,7 +99,16 @@ export function PaymentLookup({ id }: { id: string }) {
       </p>
 
       <div className="mt-6">
-        {state.s === 'idle' && (
+        {awaitingVerification && (
+          <div className="card flex flex-col items-center gap-3 p-6 text-center">
+            <p className="text-sm text-muted">
+              One moment — a quick human check before we show your record.
+            </p>
+            <Turnstile onToken={setCfToken} resetKey={cfReset} />
+          </div>
+        )}
+
+        {state.s === 'idle' && !awaitingVerification && (
           <div className="card p-6">
             <p className="text-sm text-muted">Enter your student number to pull up your record.</p>
             <div className="mt-4">

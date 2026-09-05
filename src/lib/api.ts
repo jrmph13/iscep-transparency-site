@@ -78,11 +78,12 @@ export interface RecordResult {
  * falls back to reading the sheet's own public CSV, filtered server-side to the
  * single matching row. See LOOKUP_SHEET_ID in site.ts for the trade-off.
  */
-export async function fetchRecord(sid: string): Promise<RecordResult> {
+export async function fetchRecord(sid: string, turnstileToken = ''): Promise<RecordResult> {
   if (APPS_SCRIPT_URL) {
     try {
       const res = await fetch(
-        `${APPS_SCRIPT_URL}?route=record&key=${KEY}&sid=${encodeURIComponent(sid)}&t=${Date.now()}`,
+        `${APPS_SCRIPT_URL}?route=record&key=${KEY}&sid=${encodeURIComponent(sid)}` +
+          `&cftoken=${encodeURIComponent(turnstileToken)}&t=${Date.now()}`,
         { cache: 'no-store' }
       )
       const json = res.ok ? await readJsonResponse(res) : null

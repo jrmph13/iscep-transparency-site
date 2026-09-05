@@ -5,6 +5,7 @@ import { fullDate, num, peso } from '../lib/format'
 import { useMembers } from '../lib/useMembers'
 import { roleRank } from '../lib/roles'
 import { Section } from './Section'
+import { Reveal } from './Reveal'
 
 /** Roles shown in the "Accountable officers" panel, if present in the roster. */
 const ACCOUNTABLE = new Set([
@@ -73,7 +74,7 @@ export function About({ meta, summary }: { meta: Meta; summary: Summary }) {
       title="About this board"
       subtitle="What this page is and where the numbers come from."
     >
-      <div className="grid items-start gap-3 lg:grid-cols-2">
+      <Reveal stagger className="grid items-start gap-3 lg:grid-cols-2">
         <Panel
           title="Where the numbers come from"
           icon={
@@ -168,7 +169,7 @@ export function About({ meta, summary }: { meta: Meta; summary: Summary }) {
             {ORG.contactEmail}
           </a>
         </Panel>
-      </div>
+      </Reveal>
 
       <Panel
         className="mt-3"

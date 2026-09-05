@@ -11,13 +11,30 @@ const LINKS = [
   ...(firebaseEnabled ? [{ id: 'members', label: 'Members' }] : []),
   { id: 'announcements', label: 'Announcements' },
   { id: 'records', label: 'Records' },
+  { id: 'faq', label: 'FAQ' },
   { id: 'about', label: 'About' },
 ]
 
 export function Nav() {
   const [active, setActive] = useState('overview')
   const [open, setOpen] = useState(false)
+  const [progress, setProgress] = useState(0)
   const { theme, toggle } = useTheme()
+
+  useEffect(() => {
+    const onScroll = () => {
+      const h = document.documentElement
+      const max = h.scrollHeight - h.clientHeight
+      setProgress(max > 0 ? Math.min(1, Math.max(0, h.scrollTop / max)) : 0)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
 
   useEffect(() => {
     const els = LINKS.map((l) => document.getElementById(l.id)).filter(Boolean) as HTMLElement[]
@@ -37,6 +54,14 @@ export function Nav() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 backdrop-blur-md">
+      {/* Reading-progress bar — how far down the page the visitor is. */}
+      <div className="absolute inset-x-0 -bottom-px h-0.5 bg-transparent">
+        <div
+          className="h-full bg-brand-500 transition-[width] duration-150 ease-out motion-reduce:transition-none"
+          style={{ width: `${progress * 100}%` }}
+        />
+      </div>
+
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <a href="#top" onClick={() => setOpen(false)} className="flex min-w-0 items-center gap-2.5">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand-600/10 text-brand-600 ring-1 ring-brand-500/40 dark:text-brand-400">

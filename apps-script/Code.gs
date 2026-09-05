@@ -29,7 +29,13 @@
  *                                             VITE_APPS_SCRIPT_KEY on the site.
  *     TX_SHEET_ID  = <spreadsheet id>       ← only for a STANDALONE deployment
  *                                             (bound scripts ignore it).
+ *     TX_TURNSTILE_SECRET = <secret key>    ← optional. Cloudflare Turnstile
+ *                                             secret for the record route.
+ *                                             Blank = check skipped entirely.
+ *                                             Pair with VITE_TURNSTILE_SITE_KEY
+ *                                             on the site (same widget).
  *
+
  *   Test in an INCOGNITO window, not signed in to any Google account:
  *     <URL>?route=summary&key=<TX_READ_KEY>   → must be JSON, not a login page.
  *
@@ -451,6 +457,16 @@ var TX_API_KEY = PropertiesService.getScriptProperties().getProperty('TX_READ_KE
 // Global cap on record lookups per minute (stops mass enumeration bursts).
 var TX_RECORD_CAP_PER_MIN = 25;
 
+// Cloudflare Turnstile secret for the `record` route (the one route that
+// returns per-student PII). Blank by default — the check is skipped entirely
+// and lookups behave exactly as before. Set this AND VITE_TURNSTILE_SITE_KEY
+// in src/data/site.ts together (same Turnstile widget, site key + secret key)
+// to require a solved challenge before any record is served — this is what
+// actually blocks non-browser scripts and most headless-browser scraping,
+// unlike the rate caps above which only slow a determined attacker down.
+//   Project Settings ▸ Script properties ▸ TX_TURNSTILE_SECRET = <secret key>
+var TX_TURNSTILE_SECRET = PropertiesService.getScriptProperties().getProperty('TX_TURNSTILE_SECRET') || '';
+
 // Global cap on ALL doGet traffic, checked before auth/route — Apps Script
 // gives us no per-IP signal, so this is the only lever against a flood: cap
 // total requests in flight regardless of who sends them or whether their key
@@ -475,7 +491,7 @@ function doGet(e) {
       // `record` returns one student's PII. Student numbers are guessable, so
       // the cap MUST fail closed — a cache outage is not a reason to open the
       // enumeration flood-gates.
-      out = tx_rateOk_()
+      out = (tx_rateOk_() && tx_turnstileOk_(p.cftoken))
         ? tx_recordCached_(p.sid || '')
         : { error: 'Too many lookups right now — try again in a minute.' };
     } else {
@@ -505,6 +521,30 @@ function tx_rateOk_() {
   } catch (err) {
     // Fail CLOSED for the PII route — better a rare false "try again" than an
     // uncapped enumeration channel when the cache misbehaves.
+    return false;
+  }
+}
+
+// Verifies a Turnstile token against Cloudflare's siteverify endpoint. Each
+// token is valid for one verification only — the frontend must fetch a fresh
+// one per attempt (see resetKey in src/components/Turnstile.tsx). No-op
+// (always true) when TX_TURNSTILE_SECRET isn't set, so a deploy that hasn't
+// configured Turnstile keeps working exactly as before.
+function tx_turnstileOk_(token) {
+  if (!TX_TURNSTILE_SECRET) return true;
+  token = String(token || '');
+  if (!token) return false;
+  try {
+    var resp = UrlFetchApp.fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'post',
+      payload: { secret: TX_TURNSTILE_SECRET, response: token },
+      muteHttpExceptions: true
+    });
+    var json = JSON.parse(resp.getContentText());
+    return !!json.success;
+  } catch (err) {
+    // Fail CLOSED — same posture as tx_rateOk_ for this PII route: a
+    // Cloudflare/network hiccup should not open the enumeration gate.
     return false;
   }
 }
