@@ -16,6 +16,7 @@ import { useSiteData } from './lib/useSiteData'
 import { useRoute } from './lib/router'
 import { firebaseEnabled } from './lib/firebase'
 import { lazy, Suspense } from 'react'
+import { BrandLoader } from './components/BrandLoader'
 
 const AdminDashboard = lazy(() =>
   import('./components/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
@@ -70,6 +71,8 @@ export default function App() {
 function Skeleton() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
+      <BrandLoader label="Loading the transparency board…" />
+
       <div className="skeleton h-6 w-40" />
       <div className="skeleton mt-4 h-12 w-3/4" />
       <div className="skeleton mt-3 h-4 w-full max-w-xl" />

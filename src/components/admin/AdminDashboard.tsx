@@ -25,6 +25,7 @@ import {
 import { getDb } from '../../lib/firebase'
 import type { Member } from '../../types'
 import { Logo } from '../Logo'
+import { BrandLoader } from '../BrandLoader'
 
 type Tab = 'overview' | 'members' | 'announcements' | 'totals' | 'access'
 
@@ -61,15 +62,13 @@ export function AdminDashboard() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        {admin.status === 'init' && <p className="text-sm text-faint">Loading…</p>}
+        {admin.status === 'init' && <BrandLoader label="Loading…" />}
 
         {(admin.status === 'anon' || admin.status === 'error') && (
           <LoginCard onSignIn={admin.signIn} error={admin.error} disabled={admin.status === 'error'} />
         )}
 
-        {admin.status === 'checking' && (
-          <p className="text-sm text-faint">Verifying admin access…</p>
-        )}
+        {admin.status === 'checking' && <BrandLoader label="Verifying admin access…" />}
 
         {admin.status === 'denied' && (
           <div className="card mx-auto max-w-md p-6 text-center">
