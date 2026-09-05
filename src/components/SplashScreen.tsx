@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { BrandLoader } from './BrandLoader'
 
-const MIN_VISIBLE_MS = 650
-const EXIT_MS = 550
+const MIN_VISIBLE_MS = 1400
+const EXIT_MS = 600
 
 /**
  * One-time boot splash: the ISCEP logo slides/fades in, holds briefly, then
@@ -31,18 +31,18 @@ export function SplashScreen() {
       aria-hidden
       className={
         'fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-canvas ' +
-        'transition-transform duration-[550ms] ease-[cubic-bezier(.76,0,.24,1)] motion-reduce:transition-none ' +
+        'transition-transform duration-[600ms] ease-[cubic-bezier(.76,0,.24,1)] motion-reduce:transition-none ' +
         (phase === 'out' ? '-translate-y-full' : 'translate-y-0')
       }
     >
       {/* accent bar that sweeps up the screen just behind the panel edge */}
       <span
         className={
-          'pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-brand-500 transition-transform duration-[550ms] ease-[cubic-bezier(.76,0,.24,1)] motion-reduce:hidden ' +
+          'pointer-events-none absolute inset-x-0 bottom-0 h-1 bg-brand-500 transition-transform duration-[600ms] ease-[cubic-bezier(.76,0,.24,1)] motion-reduce:hidden ' +
           (phase === 'out' ? '-translate-y-[100vh]' : 'translate-y-0')
         }
       />
-      <div className="animate-[splashIn_.5s_cubic-bezier(.22,1,.36,1)_both]">
+      <div className="animate-[splashIn_.7s_cubic-bezier(.22,1,.36,1)_both]">
         <BrandLoader className="h-52 w-52" />
       </div>
     </div>
