@@ -25,7 +25,14 @@ try {
 
 const SHEET_ID = process.env.SHEET_ID || localCfg.SHEET_ID
 const RECORDS_GID = process.env.SHEET_RECORDS_GID || localCfg.SHEET_RECORDS_GID || '0'
+// "REMAINING FUNDS" tab — kept only as a cross-check log now; the figure the
+// site uses is computed (total collected − costs used), not read from here.
 const FUNDS_GID = process.env.SHEET_FUNDS_GID || localCfg.SHEET_FUNDS_GID || '301552702'
+// "H2Go Records" — water-refill collections, added on top of Payment Records.
+const H2GO_GID = process.env.SHEET_H2GO_GID || localCfg.SHEET_H2GO_GID || '705088589'
+// "Budget and Funds Records" — disbursements; "Costs/Budget used" (col E) is
+// what's actually spent.
+const BUDGET_GID = process.env.SHEET_BUDGET_GID || localCfg.SHEET_BUDGET_GID || '1861893164'
 
 if (!SHEET_ID) {
   const hasData = await readFile(join(OUT_DIR, 'meta.json')).then(
@@ -154,17 +161,50 @@ function buildRecords(rows) {
 
 const PER_MEMBER_FEE = 50 // BSIS membership fee per member, ₱
 
-function summarize(records, remainingFunds) {
+/** Sum the "Total Amount Collected" column (index 1) of the H2Go Records tab. */
+function sumH2Go(rows) {
+  const body = rows.slice(1).filter((r) => r.some((c) => clean(c) !== ''))
+  return body.reduce((acc, r) => acc + toNumber(r[1]), 0)
+}
+
+/**
+ * "Budget and Funds Records" tab (A..J):
+ * 0 Budget for | 1 Event/Project | 2 Date used | 3 Estimated | 4 Costs/Budget used
+ * 5 Date of withdrawal | 6 Authorized Rep | 7 Total Funds(HISTORY) | 8 Remaining(HISTORY) | 9 Timestamp
+ * Returns the real spend (Σ col 4) and the itemised usage list.
+ */
+function parseBudget(rows) {
+  const body = rows.slice(1).filter((r) => clean(r[1]) !== '' || clean(r[0]) !== '')
+  let spent = 0
+  const usage = body.map((r) => {
+    const used = toNumber(r[4])
+    spent += used
+    return {
+      purpose: clean(r[0]),
+      project: clean(r[1]),
+      date: clean(r[2]),
+      estimated: toNumber(r[3]),
+      used,
+      by: clean(r[6]),
+    }
+  })
+  usage.sort((a, b) => String(b.date).localeCompare(String(a.date)))
+  return { spent, usage }
+}
+
+function summarize(records, { h2goCollected = 0, spent = null, remainingFunds = null } = {}) {
   const bySectionMap = new Map()
   const statusMap = new Map()
   const cashierMap = new Map()
   const feeKeys = ['ssg', 'membership', 'orgShirt', 'event', 'others']
   const feeCounts = Object.fromEntries(feeKeys.map((k) => [k, 0]))
-  let totalCollected = 0
+  // Membership-drive collections (Payment Records only) — drives the section
+  // tables and the "collection progress" ratio.
+  let membershipCollected = 0
   let contributors = 0
 
   for (const rec of records) {
-    totalCollected += rec.amount
+    membershipCollected += rec.amount
     if (rec.contributor) contributors++
     for (const k of feeKeys) {
       if (/^paid$/i.test(rec.fees[k])) feeCounts[k]++
@@ -212,13 +252,21 @@ function summarize(records, remainingFunds) {
 
   const expectedMembership = records.length * PER_MEMBER_FEE
 
+  // Headline "Collected" / total funds = membership drive + H2Go refills.
+  const totalCollected = membershipCollected + (h2goCollected || 0)
+  const spentFinal = spent == null ? 0 : spent
+  const remainingFinal =
+    remainingFunds != null ? remainingFunds : Math.max(totalCollected - spentFinal, 0)
+
   return {
     totalCollected,
-    remainingFunds,
-    spent: remainingFunds != null ? Math.max(totalCollected - remainingFunds, 0) : null,
+    membershipCollected,
+    h2goCollected: h2goCollected || 0,
+    remainingFunds: remainingFinal,
+    spent: spentFinal,
     perMemberFee: PER_MEMBER_FEE,
     expectedMembership,
-    collectionRate: expectedMembership ? totalCollected / expectedMembership : 0,
+    collectionRate: expectedMembership ? membershipCollected / expectedMembership : 0,
     totalMembers: records.length,
     contributors,
     pending: records.length - contributors,
@@ -259,18 +307,37 @@ async function main() {
   await mkdir(OUT_DIR, { recursive: true })
   console.log(`Fetching sheet …${String(SHEET_ID).slice(-4)}`)
 
-  const [recordsCsv, fundsCsv] = await Promise.all([
-    getCsv(RECORDS_GID),
-    getCsv(FUNDS_GID).catch((e) => {
-      console.warn(`  funds tab failed: ${e.message}`)
+  const softGet = (gid, label) =>
+    getCsv(gid).catch((e) => {
+      console.warn(`  ${label} tab failed: ${e.message}`)
       return ''
-    }),
+    })
+
+  const [recordsCsv, fundsCsv, h2goCsv, budgetCsv] = await Promise.all([
+    getCsv(RECORDS_GID),
+    softGet(FUNDS_GID, 'funds'),
+    softGet(H2GO_GID, 'h2go'),
+    softGet(BUDGET_GID, 'budget'),
   ])
 
   const records = buildRecords(parseCsv(recordsCsv))
-  const fundsRows = fundsCsv ? parseCsv(fundsCsv) : []
-  const remainingFunds = extractPeso(fundsRows)
-  const summary = summarize(records, remainingFunds)
+  const h2goCollected = h2goCsv ? sumH2Go(parseCsv(h2goCsv)) : 0
+  const { spent, usage } = budgetCsv ? parseBudget(parseCsv(budgetCsv)) : { spent: 0, usage: [] }
+
+  const membershipCollected = records.reduce((a, r) => a + r.amount, 0)
+  const totalCollected = membershipCollected + h2goCollected
+  const remainingFunds = Math.max(totalCollected - spent, 0)
+
+  // Cross-check against the old "REMAINING FUNDS" cell — logged, not used.
+  const sheetRemaining = fundsCsv ? extractPeso(parseCsv(fundsCsv)) : null
+  if (sheetRemaining != null && sheetRemaining !== remainingFunds) {
+    console.warn(
+      `  note: "REMAINING FUNDS" cell says ₱${sheetRemaining.toLocaleString()}, ` +
+        `computed ₱${remainingFunds.toLocaleString()} (total ₱${totalCollected.toLocaleString()} − spent ₱${spent.toLocaleString()}). Using computed.`
+    )
+  }
+
+  const summary = summarize(records, { h2goCollected, spent, remainingFunds })
 
   // De-identified aggregates only. Written to src/data/ so they are *bundled*
   // into the minified JS — there is no separate summary/funds/meta file to see
@@ -280,14 +347,16 @@ async function main() {
     recordCount: records.length,
     summary,
     funds: { remainingFunds },
+    usage,
   }
   const fbPath = join(ROOT, 'src', 'data', 'fallback.json')
   await writeFile(fbPath, JSON.stringify(fallback, null, 2) + '\n', 'utf8')
   console.log('  wrote src/data/fallback.json')
 
   console.log(
-    `Done: ${records.length} records, ₱${summary.totalCollected.toLocaleString()} collected, ` +
-      `remaining ${remainingFunds == null ? 'n/a' : '₱' + remainingFunds.toLocaleString()}.`
+    `Done: ${records.length} records · collected ₱${totalCollected.toLocaleString()} ` +
+      `(membership ₱${membershipCollected.toLocaleString()} + H2Go ₱${h2goCollected.toLocaleString()}) · ` +
+      `spent ₱${spent.toLocaleString()} · remaining ₱${remainingFunds.toLocaleString()}.`
   )
 }
 

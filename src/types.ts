@@ -55,6 +55,10 @@ export interface RecentActivity {
 
 export interface Summary {
   totalCollected: number
+  /** Payment Records only (membership drive) — powers the collection ratio. */
+  membershipCollected?: number
+  /** H2Go Records "Total Amount Collected", added on top of membership. */
+  h2goCollected?: number
   remainingFunds: number | null
   spent: number | null
   perMemberFee: number

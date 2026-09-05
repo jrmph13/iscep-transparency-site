@@ -1,6 +1,8 @@
-import { APPS_SCRIPT_KEY, APPS_SCRIPT_URL, FEATURES } from '../data/site'
+import { APPS_SCRIPT_KEY, APPS_SCRIPT_URL, FEATURES, LIVE_FUNDS } from '../data/site'
 import fallback from '../data/fallback.json'
 import type { FundUsage, LookupRecord, Summary } from '../types'
+import { guardedFetch } from './backendGuard'
+import { fetchLiveFunds } from './liveSheet'
 
 const KEY = encodeURIComponent(APPS_SCRIPT_KEY)
 
@@ -35,7 +37,7 @@ export async function fetchSummary(): Promise<SummaryPayload> {
   // aggregates below, so no request appears in the Network tab.
   if (FEATURES.liveSummary && APPS_SCRIPT_URL) {
     try {
-      const res = await fetch(`${APPS_SCRIPT_URL}?route=summary&key=${KEY}&t=${Date.now()}`, {
+      const res = await guardedFetch(`${APPS_SCRIPT_URL}?route=summary&key=${KEY}&t=${Date.now()}`, {
         cache: 'no-store',
       })
       const json = res.ok ? await readJsonResponse(res) : null
@@ -48,18 +50,53 @@ export async function fetchSummary(): Promise<SummaryPayload> {
           live: true,
         }
       }
-      if (import.meta.env.DEV) console.warn('[api] Apps Script summary unavailable — using local fallback')
+      if (import.meta.env.DEV) console.warn('[api] Apps Script summary unavailable — trying the sheet directly')
     } catch {
-      /* fall through to local fallback */
+      /* fall through */
     }
   }
 
   const s = fallback.summary as Summary
+  const fbUsage = (fallback as { usage?: FundUsage[] }).usage
+
+  // Second live tier: read the fund sums straight from the sheet (aggregate
+  // queries only — no rows). Everything slow-moving (sections, cashiers,
+  // recent) stays from the bundle; only the money figures are refreshed.
+  if (FEATURES.liveSummary && LIVE_FUNDS.sheetId) {
+    try {
+      const f = await fetchLiveFunds()
+      if (f && Number.isFinite(f.totalCollected)) {
+        // Member count / expected stay from the bundle (the live count(B)
+        // query misses blank-id rows); only the money figures are refreshed.
+        return {
+          fetchedAt: f.fetchedAt,
+          summary: {
+            ...s,
+            recent: s.recent ?? [],
+            totalCollected: f.totalCollected,
+            membershipCollected: f.membershipCollected,
+            h2goCollected: f.h2goCollected,
+            spent: f.spent,
+            remainingFunds: f.remainingFunds,
+            collectionRate: s.expectedMembership
+              ? f.membershipCollected / s.expectedMembership
+              : f.collectionRate,
+          },
+          funds: { remainingFunds: f.remainingFunds },
+          usage: Array.isArray(fbUsage) ? fbUsage : [],
+          live: true,
+        }
+      }
+    } catch {
+      /* fall through to bundled aggregates */
+    }
+  }
+
   return {
     fetchedAt: fallback.fetchedAt,
     summary: { ...s, recent: s.recent ?? [] },
     funds: fallback.funds ?? { remainingFunds: s.remainingFunds ?? null },
-    usage: [],
+    usage: Array.isArray(fbUsage) ? fbUsage : [],
     live: false,
   }
 }
@@ -81,7 +118,7 @@ export interface RecordResult {
 export async function fetchRecord(sid: string, turnstileToken = ''): Promise<RecordResult> {
   if (APPS_SCRIPT_URL) {
     try {
-      const res = await fetch(
+      const res = await guardedFetch(
         `${APPS_SCRIPT_URL}?route=record&key=${KEY}&sid=${encodeURIComponent(sid)}` +
           `&cftoken=${encodeURIComponent(turnstileToken)}&t=${Date.now()}`,
         { cache: 'no-store' }

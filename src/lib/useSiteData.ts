@@ -34,9 +34,26 @@ export function useSiteData() {
 
   useEffect(() => {
     load()
+
+    // Auto-refresh: poll every REFRESH_MS, plus on tab focus / becoming
+    // visible. Skipped while the tab is hidden so a backgrounded tab doesn't
+    // keep hitting the sheet.
+    const REFRESH_MS = 60_000
+    const tick = () => {
+      if (document.visibilityState === 'visible') load()
+    }
+    const id = window.setInterval(tick, REFRESH_MS)
     const onFocus = () => load()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') load()
+    }
     window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.clearInterval(id)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [load])
 
   return { data, live, status, error, reload: load }

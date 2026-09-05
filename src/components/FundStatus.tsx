@@ -9,10 +9,48 @@ function shortDate(s: string) {
     : d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
 }
 
+function FlowTile({
+  label,
+  value,
+  dot,
+  tone,
+  sign,
+}: {
+  label: string
+  value: number
+  dot?: string
+  tone?: 'brand'
+  sign?: string
+}) {
+  return (
+    <div
+      className={
+        'rounded-xl border p-3 ' +
+        (tone === 'brand' ? 'border-brand-500/40 bg-brand-500/10' : 'border-line bg-surface2/60')
+      }
+    >
+      <div className="label flex items-center gap-1.5">
+        {dot && <span className={'h-1.5 w-1.5 rounded-full ' + dot} />}
+        {label}
+      </div>
+      <div className="stat mt-0.5 text-2xl text-ink">
+        {sign && <span className="text-dim">{sign}</span>}
+        {peso(value)}
+      </div>
+    </div>
+  )
+}
+
 export function FundStatus({ summary, usage }: { summary: Summary; usage: FundUsage[] }) {
   const recent = summary.recent ?? []
   const maxCashier = Math.max(1, ...summary.byCashier.map((c) => c.collected))
   const spentTotal = usage.reduce((a, u) => a + u.used, 0)
+
+  const payments = summary.membershipCollected ?? summary.totalCollected
+  const h2go = summary.h2goCollected ?? 0
+  const spent = summary.spent ?? spentTotal
+  const remaining = summary.remainingFunds ?? Math.max(payments + h2go - spent, 0)
+  const inflow = Math.max(payments + h2go, 1)
 
   return (
     <Section
@@ -20,6 +58,37 @@ export function FundStatus({ summary, usage }: { summary: Summary; usage: FundUs
       title="Fund status"
       subtitle="Who collected the payments, what was spent, and the latest entries."
     >
+      {/* Fund flow: student payments + H2Go − budget used = remaining */}
+      <div className="card mb-3 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="kicker">Fund flow</span>
+          <span className="figure text-[11px] text-dim">
+            {peso(payments)} + {peso(h2go)} &minus; {peso(spent)} = {peso(remaining)}
+          </span>
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <FlowTile label="Student payments" value={payments} dot="bg-brand-500" />
+          <FlowTile label="H2Go collections" value={h2go} dot="bg-sky-500" />
+          <FlowTile label="Budget used" value={spent} dot="bg-amber-500" sign="−" />
+          <FlowTile label="Remaining" value={remaining} tone="brand" />
+        </div>
+        <div className="mt-4 flex h-2.5 w-full overflow-hidden rounded-full bg-line">
+          <div
+            className="h-full bg-brand-500"
+            style={{ width: `${(payments / inflow) * 100}%` }}
+            title={`Student payments ${peso(payments)}`}
+          />
+          <div
+            className="h-full bg-sky-500"
+            style={{ width: `${(h2go / inflow) * 100}%` }}
+            title={`H2Go ${peso(h2go)}`}
+          />
+        </div>
+        <p className="mt-2 text-[11px] text-dim">
+          Inflow {peso(payments + h2go)} · {((remaining / inflow) * 100).toFixed(1)}% still on hand.
+        </p>
+      </div>
+
       <div className="grid gap-3 lg:grid-cols-2">
         {/* Cashier breakdown */}
         <div className="card flex flex-col p-5">

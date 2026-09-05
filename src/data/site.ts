@@ -66,6 +66,25 @@ export const LOOKUP_SHEET_ID = import.meta.env.VITE_LOOKUP_SHEET_ID || ''
 export const LOOKUP_SHEET_GID = import.meta.env.VITE_LOOKUP_SHEET_GID || '0'
 
 /**
+ * Real-time fund figures, read straight from the sheet when the Apps Script
+ * `?route=summary` isn't reachable. See src/lib/liveSheet.ts — ONLY aggregate
+ * `select sum()/count()` queries are sent, so no student row is transferred.
+ *
+ * ⚠️  The `sheetId` here ships in the bundle and this path only works while the
+ * spreadsheet is link-readable. Once the sheet is made private (recommended),
+ * set VITE_LIVE_FUNDS_SHEET_ID='' (or leave the deploy without it) and rely on
+ * the Apps Script summary instead.
+ */
+export const LIVE_FUNDS = {
+  sheetId:
+    import.meta.env.VITE_LIVE_FUNDS_SHEET_ID ??
+    '1IgqaP6JNNdtyaFeV1SghwDqWYRjGvG6x6zII0iNBXpc',
+  paymentsGid: import.meta.env.VITE_LIVE_FUNDS_PAYMENTS_GID || '0',
+  h2goGid: import.meta.env.VITE_LIVE_FUNDS_H2GO_GID || '705088589',
+  budgetGid: import.meta.env.VITE_LIVE_FUNDS_BUDGET_GID || '1861893164',
+}
+
+/**
  * Cloudflare Turnstile site key for the record lookup (the one route that
  * returns per-student PII, so it's the only route worth gating). Free,
  * self-serve, no domain/DNS change needed — sign up at
@@ -103,12 +122,14 @@ export const FEATURES = {
 
   /**
    * When true, the dashboard fetches `?route=summary` from APPS_SCRIPT_URL on
-   * every load (a visible request in the Network tab). When false (default),
-   * the totals come straight from the bundled aggregates in
-   * src/data/fallback.json — no runtime request — and stay fresh via the
-   * 30-minute scheduled rebuild.
+   * every load (a visible request in the Network tab) so the totals are live,
+   * not up-to-30-minutes old. The Apps Script serves this from a 60-second
+   * server-side cache, and on ANY failure — offline, quota, the backendGuard
+   * circuit tripping — the app silently falls back to the bundled aggregates
+   * in src/data/fallback.json (still refreshed by the 30-minute rebuild), so
+   * a page always renders. Set to false to go back to bundle-only, no request.
    */
-  liveSummary: false,
+  liveSummary: true,
 }
 
 /**

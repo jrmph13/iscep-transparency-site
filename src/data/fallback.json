@@ -1,16 +1,18 @@
 {
-  "fetchedAt": "2026-09-04T12:05:33.409Z",
+  "fetchedAt": "2026-09-05T15:55:16.100Z",
   "recordCount": 672,
   "summary": {
     "totalCollected": 11450,
-    "remainingFunds": 11450,
-    "spent": 0,
+    "membershipCollected": 11450,
+    "h2goCollected": 0,
+    "remainingFunds": 10313,
+    "spent": 1137,
     "perMemberFee": 50,
     "expectedMembership": 33600,
     "collectionRate": 0.34077380952380953,
     "totalMembers": 672,
-    "contributors": 229,
-    "pending": 443,
+    "contributors": 230,
+    "pending": 442,
     "feeCounts": {
       "ssg": 0,
       "membership": 232,
@@ -21,16 +23,16 @@
     "bySection": [
       {
         "section": "3A",
-        "members": 76,
-        "contributors": 60,
-        "collected": 3000,
-        "expected": 3800,
-        "rate": 0.7894736842105263
+        "members": 75,
+        "contributors": 59,
+        "collected": 2950,
+        "expected": 3750,
+        "rate": 0.7866666666666666
       },
       {
         "section": "2A",
         "members": 82,
-        "contributors": 46,
+        "contributors": 47,
         "collected": 2300,
         "expected": 4100,
         "rate": 0.5609756097560976
@@ -45,11 +47,11 @@
       },
       {
         "section": "3B",
-        "members": 63,
-        "contributors": 28,
-        "collected": 1400,
-        "expected": 3150,
-        "rate": 0.4444444444444444
+        "members": 62,
+        "contributors": 27,
+        "collected": 1350,
+        "expected": 3100,
+        "rate": 0.43548387096774194
       },
       {
         "section": "1B",
@@ -61,11 +63,11 @@
       },
       {
         "section": "2B",
-        "members": 46,
-        "contributors": 19,
-        "collected": 950,
-        "expected": 2300,
-        "rate": 0.41304347826086957
+        "members": 48,
+        "contributors": 21,
+        "collected": 1050,
+        "expected": 2400,
+        "rate": 0.4375
       },
       {
         "section": "3C",
@@ -127,15 +129,15 @@
     "statusCounts": [
       {
         "label": "No amount yet",
-        "count": 443
+        "count": 442
       },
       {
         "label": "Partially Paid",
-        "count": 222
+        "count": 227
       },
       {
         "label": "Recorded",
-        "count": 6
+        "count": 2
       },
       {
         "label": "Partial Paid",
@@ -191,13 +193,23 @@
         "date": "2026-08-20"
       },
       {
-        "section": "3B",
+        "section": "2B",
         "amount": 50,
         "date": "2026-08-20"
       }
     ]
   },
   "funds": {
-    "remainingFunds": 11450
-  }
+    "remainingFunds": 10313
+  },
+  "usage": [
+    {
+      "purpose": "Administrative Expenses",
+      "project": "Bulletin Board",
+      "date": "09-05-2026",
+      "estimated": 1000,
+      "used": 1137,
+      "by": "Rean Justine Baulite"
+    }
+  ]
 }

@@ -435,8 +435,9 @@ function sendReceiptEmail() {
 var TX_SHEET_ID = PropertiesService.getScriptProperties().getProperty('TX_SHEET_ID') || '';
 
 var TX_RECORDS_SHEET = 'Payment Records';
-var TX_FUNDS_SHEET = 'REMAINING FUNDS';          // remaining balance is in B5
+var TX_FUNDS_SHEET = 'REMAINING FUNDS';          // legacy B5 cell — cross-check only
 var TX_BUDGET_SHEET = 'Budget and Funds Records';
+var TX_H2GO_SHEET = 'H2Go Records';              // water-refill collections
 var TX_PER_MEMBER_FEE = 50;
 
 function tx_ss_() {
@@ -477,22 +478,47 @@ var TX_TURNSTILE_SECRET = PropertiesService.getScriptProperties().getProperty('T
 // start queuing/erroring out legitimate calls.
 var TX_GLOBAL_CAP_PER_10S = 40;
 
+// Micro-burst cap — catches a spike a couple of seconds before the 10s window
+// can react. Best-effort (fails OPEN), like TX_GLOBAL_CAP_PER_10S.
+var TX_BURST_CAP_PER_2S = 12;
+
+// When the 10s global cap trips, arm an escalating deny window. doGet checks
+// this flag FIRST, so a sustained flood stops paying for per-slot counting on
+// every hit — it just gets an instant `busy`. 15s → 30s → 60s … doubling,
+// capped; the escalation level itself decays after 10 min of calm.
+var TX_COOLDOWN_MIN_S = 15;
+var TX_COOLDOWN_MAX_S = 300;
+
+// Mass-enumeration signature for the `record` route: many DISTINCT student
+// numbers queried in a short window. A real person checks their own number
+// (and maybe one friend's) — not 40. Measured globally (no IP is available),
+// so past the cap the PII route fails CLOSED for everyone until the window
+// drains. A rare false trip costs one "try again in a minute".
+var TX_ENUM_DISTINCT_CAP_5M = 40;
+
 function doGet(e) {
   var p = (e && e.parameter) || {};
   var route = p.route || 'summary';
   var out;
   try {
-    if (!tx_globalRateOk_()) {
-      // Cheapest possible bail — no auth check, no cache read, no sheet
-      // access. This is what actually protects the quota under a flood.
+    if (tx_inCooldown_()) {
+      // Already inside an armed deny window — instant bail, no counting.
+      out = { error: 'busy' };
+    } else if (!tx_microBurstOk_() || !tx_globalRateOk_()) {
+      // Cheapest real bail — no auth check, no cache read, no sheet access.
+      // A tripped burst/rate cap means a flood is in progress: arm the
+      // escalating deny window so the next hits short-circuit on the
+      // tx_inCooldown_() check above instead of re-counting every time.
+      tx_tripCooldown_();
       out = { error: 'busy' };
     } else if (p.key !== TX_API_KEY) {
       out = { error: 'unauthorized' };
     } else if (route === 'record') {
       // `record` returns one student's PII. Student numbers are guessable, so
-      // the cap MUST fail closed — a cache outage is not a reason to open the
-      // enumeration flood-gates.
-      out = (tx_rateOk_() && tx_turnstileOk_(p.cftoken))
+      // every gate here MUST fail closed — a cache outage is not a reason to
+      // open the enumeration flood-gates. tx_enumOk_ additionally denies the
+      // whole route once too many DISTINCT numbers are probed in one window.
+      out = (tx_rateOk_() && tx_enumOk_(p.sid || '') && tx_turnstileOk_(p.cftoken))
         ? tx_recordCached_(p.sid || '')
         : { error: 'Too many lookups right now — try again in a minute.' };
     } else {
@@ -563,6 +589,60 @@ function tx_globalRateOk_() {
     // every request would take the whole read side offline for nothing; the
     // PII-specific cap (tx_rateOk_) still fails closed independently.
     return true;
+  }
+}
+
+// Sub-2s spike cap. Best-effort — fails OPEN (the PII cap is independent).
+function tx_microBurstOk_() {
+  try {
+    var c = CacheService.getScriptCache();
+    var slot = 'gms_' + Math.floor(Date.now() / 2000);
+    var n = Number(c.get(slot) || 0) + 1;
+    c.put(slot, String(n), 10);
+    return n <= TX_BURST_CAP_PER_2S;
+  } catch (err) {
+    return true;
+  }
+}
+
+// Escalating global deny window, armed by doGet when the 10s cap trips.
+function tx_inCooldown_() {
+  try {
+    return !!CacheService.getScriptCache().get('gcd_until');
+  } catch (err) {
+    return false; // best-effort shield — never take the read side down over it
+  }
+}
+
+function tx_tripCooldown_() {
+  try {
+    var c = CacheService.getScriptCache();
+    var lvl = Number(c.get('gcd_lvl') || 0);
+    var secs = Math.min(TX_COOLDOWN_MIN_S * Math.pow(2, lvl), TX_COOLDOWN_MAX_S);
+    c.put('gcd_until', '1', Math.ceil(secs));
+    c.put('gcd_lvl', String(lvl + 1), 600); // level decays after 10 min of calm
+  } catch (err) {}
+}
+
+// Distinct-student-number enumeration cap for the `record` route. Counts how
+// many DISTINCT normalised SIDs are queried in a rolling 5-minute window;
+// past the cap the route fails CLOSED for everyone until the window drains.
+// Repeats of an already-seen SID (a user retrying) always pass.
+function tx_enumOk_(sid) {
+  try {
+    var norm = tx_norm_(sid);
+    if (!norm) return true; // empty / malformed handled downstream
+    var c = CacheService.getScriptCache();
+    var win = Math.floor(Date.now() / 300000);
+    var seenKey = 'es_' + win + '_' + norm;
+    if (c.get(seenKey)) return true; // seen this number already this window
+    c.put(seenKey, '1', 360);
+    var countKey = 'ec_' + win;
+    var n = Number(c.get(countKey) || 0) + 1;
+    c.put(countKey, String(n), 360);
+    return n <= TX_ENUM_DISTINCT_CAP_5M;
+  } catch (err) {
+    return false; // fail CLOSED — same posture as tx_rateOk_ for the PII route
   }
 }
 
@@ -648,6 +728,8 @@ function tx_map_(r) {
   };
 }
 
+// Legacy "REMAINING FUNDS" B5 cell. NOT used for the published figure any more
+// (it drifts out of date) — kept only so tx_summary_ can log a cross-check.
 function tx_remaining_() {
   try {
     var sh = tx_ss_().getSheetByName(TX_FUNDS_SHEET);
@@ -661,6 +743,22 @@ function tx_remaining_() {
     }
   } catch (err) {}
   return null;
+}
+
+// "H2Go Records": 0 Date Collected | 1 Total Amount Collected | 2 Total Refills
+// | 3 Total Refills Costs | 4 Authorized Collector | 5 Time Stamp
+// Returns the sum of column B (Total Amount Collected).
+function tx_h2goCollected_() {
+  try {
+    var sh = tx_ss_().getSheetByName(TX_H2GO_SHEET);
+    if (!sh) return 0;
+    var v = sh.getDataRange().getValues();
+    var sum = 0;
+    for (var i = 1; i < v.length; i++) sum += tx_num_(v[i][1]);
+    return sum;
+  } catch (err) {
+    return 0;
+  }
 }
 
 // "Budget and Funds Records" columns (A..J):
@@ -726,10 +824,11 @@ function tx_summary_() {
   var feeKeys = ['ssg', 'membership', 'orgShirt', 'event', 'others'];
   var feeCounts = {}; feeKeys.forEach(function (k) { feeCounts[k] = 0; });
   var bySection = {}, statusCounts = {}, byCashier = {};
-  var totalCollected = 0, contributors = 0;
+  // Payment Records only — drives the section tables + collection ratio.
+  var membershipCollected = 0, contributors = 0;
 
   recs.forEach(function (r) {
-    totalCollected += r.amount;
+    membershipCollected += r.amount;
     if (r.contributor) contributors++;
     feeKeys.forEach(function (k) { if (/^paid$/i.test(r.fees[k])) feeCounts[k]++; });
 
@@ -766,19 +865,37 @@ function tx_summary_() {
     });
 
   var expectedMembership = recs.length * TX_PER_MEMBER_FEE;
-  var rem = tx_remaining_();
   var usage = tx_usage_();
-  var spent = usage.totalSpent || (rem != null ? Math.max(totalCollected - rem, 0) : null);
+
+  // Figures the site shows:
+  //   collected  = Payment Records + H2Go Records
+  //   spent      = Σ "Costs/Budget used" in Budget and Funds Records
+  //   remaining  = collected − spent   (computed, NOT the legacy B5 cell)
+  var h2goCollected = tx_h2goCollected_();
+  var totalCollected = membershipCollected + h2goCollected;
+  var spent = usage.totalSpent || 0;
+  var rem = Math.max(totalCollected - spent, 0);
+
+  // Log the drift from the old cell so it can be reconciled on the sheet.
+  try {
+    var b5 = tx_remaining_();
+    if (b5 != null && b5 !== rem) {
+      console.log('tx_summary_: "REMAINING FUNDS" cell ' + b5 + ' vs computed ' + rem +
+        ' (collected ' + totalCollected + ' − spent ' + spent + ')');
+    }
+  } catch (_e) {}
 
   return {
     fetchedAt: new Date().toISOString(),
     summary: {
       totalCollected: totalCollected,
+      membershipCollected: membershipCollected,
+      h2goCollected: h2goCollected,
       remainingFunds: rem,
       spent: spent,
       perMemberFee: TX_PER_MEMBER_FEE,
       expectedMembership: expectedMembership,
-      collectionRate: expectedMembership ? totalCollected / expectedMembership : 0,
+      collectionRate: expectedMembership ? membershipCollected / expectedMembership : 0,
       totalMembers: recs.length,
       contributors: contributors,
       pending: recs.length - contributors,

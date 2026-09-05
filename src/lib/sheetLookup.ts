@@ -1,6 +1,7 @@
 import { LOOKUP_SHEET_GID, LOOKUP_SHEET_ID } from '../data/site'
 import type { LookupRecord } from '../types'
 import type { RecordResult } from './api'
+import { BackendBlockedError, guardedFetch } from './backendGuard'
 
 /**
  * Serverless record lookup: query the sheet's public gviz endpoint straight
@@ -113,7 +114,15 @@ export async function fetchRecordFromSheet(sidRaw: string): Promise<RecordResult
     `https://docs.google.com/spreadsheets/d/${LOOKUP_SHEET_ID}/gviz/tq` +
     `?tqx=out:csv&gid=${LOOKUP_SHEET_GID}&tq=${encodeURIComponent(tq)}&t=${Date.now()}`
 
-  const res = await fetch(url, { cache: 'no-store' })
+  let res: Response
+  try {
+    res = await guardedFetch(url, { cache: 'no-store' })
+  } catch (err) {
+    // Guard refused the call (rate limit / open circuit / timeout) — degrade
+    // to "not found" rather than surfacing an error for the fallback path.
+    if (err instanceof BackendBlockedError) return { found: false, records: [] }
+    throw err
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const rows = parseCsv(await res.text())
   // First row is the header echoed by gviz.
