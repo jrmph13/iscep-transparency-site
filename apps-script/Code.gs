@@ -451,12 +451,25 @@ var TX_API_KEY = PropertiesService.getScriptProperties().getProperty('TX_READ_KE
 // Global cap on record lookups per minute (stops mass enumeration bursts).
 var TX_RECORD_CAP_PER_MIN = 25;
 
+// Global cap on ALL doGet traffic, checked before auth/route — Apps Script
+// gives us no per-IP signal, so this is the only lever against a flood: cap
+// total requests in flight regardless of who sends them or whether their key
+// is valid, so a burst can't eat the project's concurrent-execution quota
+// (that quota is shared with every other route, including the write side).
+// 40 per 10s (~240/min) is well above real usage but well below what would
+// start queuing/erroring out legitimate calls.
+var TX_GLOBAL_CAP_PER_10S = 40;
+
 function doGet(e) {
   var p = (e && e.parameter) || {};
   var route = p.route || 'summary';
   var out;
   try {
-    if (p.key !== TX_API_KEY) {
+    if (!tx_globalRateOk_()) {
+      // Cheapest possible bail — no auth check, no cache read, no sheet
+      // access. This is what actually protects the quota under a flood.
+      out = { error: 'busy' };
+    } else if (p.key !== TX_API_KEY) {
       out = { error: 'unauthorized' };
     } else if (route === 'record') {
       // `record` returns one student's PII. Student numbers are guessable, so
@@ -493,6 +506,22 @@ function tx_rateOk_() {
     // Fail CLOSED for the PII route — better a rare false "try again" than an
     // uncapped enumeration channel when the cache misbehaves.
     return false;
+  }
+}
+
+function tx_globalRateOk_() {
+  try {
+    var c = CacheService.getScriptCache();
+    var slot = 'grl_' + Math.floor(Date.now() / 10000);
+    var n = Number(c.get(slot) || 0) + 1;
+    c.put(slot, String(n), 30);
+    return n <= TX_GLOBAL_CAP_PER_10S;
+  } catch (err) {
+    // Fail OPEN here (unlike tx_rateOk_): this gate isn't the PII boundary —
+    // it's a best-effort quota shield. If CacheService itself is down, refusing
+    // every request would take the whole read side offline for nothing; the
+    // PII-specific cap (tx_rateOk_) still fails closed independently.
+    return true;
   }
 }
 
