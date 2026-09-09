@@ -217,7 +217,7 @@ function obfuscateClasses(): Plugin {
 }
 
 export default defineConfig(({ mode }) => ({
-  base: './',
+  base: mode === 'production' ? '/' : './',
   build: {
     // No source maps in production — nothing to un-minify the bundle with.
     sourcemap: false,

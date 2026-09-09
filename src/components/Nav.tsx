@@ -134,7 +134,7 @@ export function Nav() {
       {/* Mobile dropdown */}
       {open && (
         <nav className="border-t border-line bg-canvas px-4 pb-3 pt-2 md:hidden">
-          <div className="grid grid-cols-2 gap-1">
+          <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
             {LINKS.map((l) => (
               <a
                 key={l.id}
