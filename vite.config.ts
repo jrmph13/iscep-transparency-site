@@ -105,6 +105,7 @@ function obfuscateClasses(): Plugin {
     enforce: 'post',
     async closeBundle() {
       if (process.env.NO_CLASS_OBF === '1') return
+      if (process.env.VERCEL) return
 
       const distDir = path.resolve(process.cwd(), 'dist')
       if (!fs.existsSync(distDir)) return
