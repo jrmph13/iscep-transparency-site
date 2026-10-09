@@ -37,7 +37,7 @@ export const ORG = {
  */
 export const APPS_SCRIPT_URL =
   import.meta.env.VITE_APPS_SCRIPT_URL ||
-  'https://script.google.com/macros/s/AKfycbz9mwsNOFkfnVY126n-d5WmhtKbJLG-Fo0iC0bZjU8i2tlDncaSEaufIMtqSfzh5SmF/exec'
+  'https://iscep-audit-api.onrender.com/api/transparency'
 
 /**
  * Read key sent to the Apps Script. Not a real secret — it ships in this

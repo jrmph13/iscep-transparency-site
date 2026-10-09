@@ -2,14 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/src/assets/b1.png" />
-    <link rel="apple-touch-icon" href="/src/assets/b1.png" />
-    <link rel="alternate icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f8fafc" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>ISCEP Transparency</title>
-    <script src="./z9.js"></script>
+    <!-- Root-relative so the early theme/clickjacking guard also works on
+         Vercel deep links such as /payments/studentid/2026-12345. -->
+    <script src="/z9.js"></script>
     <meta
       name="description"
       content="ISCEP fund transparency - collections, remaining balance, per-section breakdown and Facebook updates."

@@ -2,7 +2,11 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Redirecting…</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#f8fafc" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Redirecting… · ISCEP Transparency</title>
     <script>
       // GitHub Pages serves this for unknown paths. Convert a shared/typed
       // path like /payments/studentid/2026-12345 into the app's hash route
@@ -20,8 +24,201 @@
         }
       })()
     </script>
+    <script>
+      // Match the app's saved theme so the flash before redirect isn't jarring.
+      (function () {
+        try {
+          if (localStorage.getItem('iscep-theme') === 'dark') {
+            document.documentElement.className = 'dark'
+          }
+        } catch (e) {}
+      })()
+    </script>
+    <style>
+      /* Same tokens as src/index.css — light default, .dark flips them. */
+      :root {
+        color-scheme: light;
+        --c-canvas: 248 250 252;
+        --c-surface: 255 255 255;
+        --c-line: 226 232 240;
+        --c-ink: 15 23 42;
+        --c-faint: 71 85 105;
+        --brand: 37 99 235;
+        --brand-soft: 59 130 246;
+      }
+      .dark {
+        color-scheme: dark;
+        --c-canvas: 5 7 15;
+        --c-surface: 12 19 38;
+        --c-line: 33 44 68;
+        --c-ink: 255 255 255;
+        --c-faint: 148 163 184;
+        --brand: 96 165 250;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background-color: rgb(var(--c-canvas));
+      }
+      body {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px 16px;
+        font-family: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        color: rgb(var(--c-faint));
+        -webkit-font-smoothing: antialiased;
+        background-image: linear-gradient(rgb(var(--brand-soft) / 0.06) 1px, transparent 1px),
+          linear-gradient(90deg, rgb(var(--brand-soft) / 0.06) 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 380px;
+        padding: 40px 28px 32px;
+        text-align: center;
+        border: 1px solid rgb(var(--c-line));
+        border-radius: 16px;
+        background: rgb(var(--c-surface));
+        box-shadow: 0 0 0 1px rgb(var(--brand-soft) / 0.12), 0 8px 40px -12px rgb(var(--brand-soft) / 0.35);
+      }
+
+      /* BrandLoader: soft halo, faint ring, rotating arc, floating mark. */
+      .loader {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 24px;
+        display: grid;
+        place-items: center;
+      }
+      .loader .halo {
+        position: absolute;
+        inset: 6%;
+        border-radius: 50%;
+        background: rgb(var(--brand-soft) / 0.1);
+        filter: blur(8px);
+      }
+      .loader .ring,
+      .loader .arc {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+      }
+      .loader .ring {
+        border: 1px solid rgb(var(--brand-soft) / 0.15);
+      }
+      .loader .arc {
+        border: 2px solid transparent;
+        border-top-color: rgb(var(--brand-soft) / 0.8);
+        animation: spin 2.4s linear infinite;
+      }
+      .loader svg {
+        position: relative;
+        width: 60%;
+        height: 60%;
+        animation: floaty 4s ease-in-out infinite;
+        filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.12));
+      }
+
+      .kicker {
+        margin: 0 0 6px;
+        font-family: 'Bebas Neue', 'Inter Variable', system-ui, sans-serif;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgb(var(--brand));
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-family: Brunson, 'Inter Variable', Georgia, serif;
+        font-size: 24px;
+        line-height: 1.2;
+        color: rgb(var(--c-ink));
+      }
+      p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .btn {
+        display: inline-block;
+        margin-top: 24px;
+        padding: 10px 20px;
+        border-radius: 999px;
+        background: #2563eb;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background-color 0.15s;
+      }
+      .btn:hover {
+        background: #1d4ed8;
+      }
+      :focus-visible {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes floaty {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-4px);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .loader .arc,
+        .loader svg {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    Redirecting…
+    <main class="card" role="status" aria-live="polite">
+      <div class="loader" aria-hidden="true">
+        <span class="halo"></span>
+        <span class="ring"></span>
+        <span class="arc"></span>
+        <svg viewBox="0 0 32 32">
+          <rect width="32" height="32" rx="7" fill="#080d1c" />
+          <path
+            d="M16 5l9 4v6c0 5.6-3.7 10.4-9 12-5.3-1.6-9-6.4-9-12V9l9-4z"
+            fill="none"
+            stroke="#3b82f6"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M11.5 16.2l3 3 6-6.4"
+            fill="none"
+            stroke="#60a5fa"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+      <p class="kicker">ISCEP Transparency</p>
+      <h1>Redirecting…</h1>
+      <p>Taking you to the right page. This only takes a moment.</p>
+      <a class="btn" href="./">Go to homepage</a>
+    </main>
   </body>
 </html>

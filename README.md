@@ -242,6 +242,30 @@ Locally: `FB_PAGE_TOKEN=xxxx npm run sync`.
 Because `vite.config.ts` uses `base: './'`, the same build also works from the
 domain root on Vercel or any static host (`npm run build`, serve `dist/`).
 
+## Deploying to Vercel
+
+Import this repository into Vercel with the defaults detected for Vite. The
+repository now declares `npm run build` and `dist` in `vercel.json`; do not use
+`npm run dev` as the Vercel build command.
+
+For a genuinely live deployment, add these Vercel **Environment Variables**
+for the Production environment and redeploy:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `SHEET_ID` | Recommended | Lets the build refresh the de-identified fallback aggregates. Keep it a Vercel secret. |
+| `VITE_APPS_SCRIPT_URL` | Yes for private-sheet lookup | Published Apps Script `/exec` URL. |
+| `VITE_APPS_SCRIPT_KEY` | Yes for lookup/live summary | Must match the Apps Script `TX_READ_KEY` property. |
+| `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID` | Optional | Enables the realtime Members section and admin console. |
+| `FB_PAGE_TOKEN` | Optional | Refreshes announcements from the Facebook Graph API during builds. |
+
+`VITE_*` values are intentionally public browser configuration; never put the
+Apps Script write key, Firebase Admin credentials, or other server secrets in
+them. Configure `TX_WRITE_KEY`, `TX_READ_KEY`, and (optionally)
+`TX_TURNSTILE_SECRET` only in Apps Script project properties. After deployment,
+test the App Script URL in an incognito window and confirm it returns JSON, then
+test both `/` and `/payments/studentid/<student-number>` on the Vercel domain.
+
 ## Notes
 
 - The site has no login and cannot write anything.
